@@ -1,0 +1,12 @@
+{
+  "name": "cardapio-on",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cardápio público online — consome a API do cardapio-adm (PostgreSQL)",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend"
+  }
+}
