@@ -1,0 +1,62 @@
+import type { Product } from '@/types'
+import { useUI } from '@/context/UIContext'
+import { EditorialCard } from '@/components/EditorialCard/EditorialCard'
+import { EditorialCarousel } from '@/components/EditorialCard/EditorialCarousel'
+import { productPrice } from '@/utils'
+
+interface FavoritesProps {
+  products: Product[]
+  title?: string
+}
+
+export function Favorites({ products, title = 'Favoritos da casa' }: FavoritesProps) {
+  const { openProduct } = useUI()
+
+  if (!products.length) return null
+
+  return (
+    <section
+      id="favoritos"
+      className="relative overflow-hidden bg-ink py-16 sm:py-24 lg:py-28"
+      aria-labelledby="favoritos-title"
+    >
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 px-4 sm:mb-12 sm:px-6 lg:mb-16 lg:px-8">
+          <div data-reveal>
+            <p className="section-kicker mb-3">Seleção</p>
+            <h2 id="favoritos-title" className="section-title">
+              {title}
+            </h2>
+            <p className="mt-3 max-w-md text-sm text-bone-muted sm:mt-4 sm:text-base">
+              Os pratos que definem a casa — escolhidos para despertar desejo antes da escolha.
+            </p>
+          </div>
+        </div>
+
+        <div className="sm:px-6 lg:px-8">
+          <EditorialCarousel
+            items={products}
+            label="Favoritos da casa"
+            getKey={(p) => p.id}
+            renderCard={(product, { stacked }) => (
+              <EditorialCard
+                imageUrl={product.imageUrl}
+                imageAlt={product.name}
+                eyebrow={product.tags?.[0] ?? 'Favorito'}
+                title={product.name}
+                description={product.description}
+                price={productPrice(product)}
+                compareAtPrice={product.promoPrice != null ? product.price : null}
+                badge={product.isFeatured ? 'Destaque' : undefined}
+                ctaLabel="Ver produto"
+                stacked={stacked}
+                unavailable={!product.isAvailable}
+                onCta={() => openProduct(product)}
+              />
+            )}
+          />
+        </div>
+      </div>
+    </section>
+  )
+}

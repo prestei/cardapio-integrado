@@ -50,7 +50,7 @@ export function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
     user?.establishment?.slug && publicMenuBase
       ? `${publicMenuBase}/${user.establishment.slug}`
       : user?.establishment?.slug
-        ? `http://localhost:5174/${user.establishment.slug}`
+        ? `http://localhost:5177/${user.establishment.slug}`
         : '#'
 
   return (

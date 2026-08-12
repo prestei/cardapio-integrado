@@ -19,7 +19,8 @@ fi
 if "$PGBIN/pg_ctl" -D "$PGDIR" status >/dev/null 2>&1; then
   echo "Postgres já está rodando em .pgdata (porta $PORT)"
 else
-  "$PGBIN/pg_ctl" -D "$PGDIR" -l "$PGDIR/logfile" start -o "-p $PORT -k $PGDIR"
+  # Quote -k path: project dirs with spaces (e.g. "Área de trabalho") break unquoted -o args.
+  "$PGBIN/pg_ctl" -D "$PGDIR" -l "$PGDIR/logfile" start -o "-p $PORT -k '$PGDIR'"
   sleep 1
   "$PGBIN/createdb" -h 127.0.0.1 -p "$PORT" -U cardapio cardapio 2>/dev/null || true
   echo "Postgres iniciado em 127.0.0.1:$PORT"
