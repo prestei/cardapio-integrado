@@ -15,11 +15,17 @@ import {
   ExternalLink,
   Check,
   Bell,
+  LayoutList,
 } from 'lucide-react'
 import { establishmentService } from '@/services/establishment'
 import { settingsService } from '@/services/settings'
 import { notificationSettingsService } from '@/services/notificationSettings'
-import type { BusinessHours, Establishment, EstablishmentSettings } from '@/types'
+import type {
+  BusinessHours,
+  Establishment,
+  EstablishmentSettings,
+  MenuSectionsConfig,
+} from '@/types'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -28,6 +34,7 @@ import { Select } from '@/components/ui/Select'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ApiError } from '@/services/api'
 import { cn } from '@/utils/cn'
+import { useAuth } from '@/hooks/useAuth'
 
 type TabId =
   | 'gerais'
@@ -36,6 +43,7 @@ type TabId =
   | 'atendimento'
   | 'pedido-minimo'
   | 'notificacoes'
+  | 'secoes'
   | 'dominio'
   | 'politicas'
 
@@ -46,9 +54,36 @@ const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = [
   { id: 'atendimento', label: 'Atendimento', icon: UtensilsCrossed },
   { id: 'pedido-minimo', label: 'Pedido mínimo', icon: Wallet },
   { id: 'notificacoes', label: 'Notificações', icon: Bell },
+  { id: 'secoes', label: 'Seções', icon: LayoutList },
   { id: 'dominio', label: 'Domínio', icon: Globe },
   { id: 'politicas', label: 'Políticas', icon: ScrollText },
 ]
+
+const DEFAULT_MENU_SECTIONS: MenuSectionsConfig = {
+  favorites: {
+    kicker: 'Seleção',
+    title: 'Favoritos da casa',
+    description:
+      'Os pratos que definem a casa — escolhidos para despertar desejo antes da escolha.',
+  },
+  menu: {
+    kicker: 'Cardápio',
+    title: 'Nosso cardápio',
+    description:
+      'Navegue pelas categorias. Cada prato foi pensado para ser escolhido com calma — ou com fome.',
+  },
+  promotions: {
+    kicker: 'Promoções',
+    title: 'Hoje tem mais',
+    description: 'Peças especiais do dia — para quem quer mais sabor por menos.',
+  },
+  nav: {
+    loja: 'Loja',
+    favoritos: 'Favoritos',
+    cardapio: 'Cardápio',
+    promocoes: 'Ofertas',
+  },
+}
 
 export function SettingsPage() {
   const [tab, setTab] = useState<TabId>('gerais')
@@ -110,6 +145,7 @@ export function SettingsPage() {
           {tab === 'atendimento' && <ServiceTab establishment={establishment} settings={settings} />}
           {tab === 'pedido-minimo' && <MinOrderTab settings={settings} />}
           {tab === 'notificacoes' && <NotificationsTab settings={settings} />}
+          {tab === 'secoes' && <SectionsTab settings={settings} />}
           {tab === 'dominio' && <DomainTab establishment={establishment} settings={settings} />}
           {tab === 'politicas' && <PoliciesTab settings={settings} />}
         </>
@@ -812,6 +848,104 @@ function NotificationsTab({ settings: _settings }: { settings: EstablishmentSett
 }
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Seções do cardápio público
+// ---------------------------------------------------------------------------
+
+function SectionsTab({ settings }: { settings: EstablishmentSettings }) {
+  const queryClient = useQueryClient()
+  const defaults = {
+    ...DEFAULT_MENU_SECTIONS,
+    ...(settings.menuSectionsJson ?? {}),
+    favorites: {
+      ...DEFAULT_MENU_SECTIONS.favorites,
+      ...(settings.menuSectionsJson?.favorites ?? {}),
+    },
+    menu: {
+      ...DEFAULT_MENU_SECTIONS.menu,
+      ...(settings.menuSectionsJson?.menu ?? {}),
+    },
+    promotions: {
+      ...DEFAULT_MENU_SECTIONS.promotions,
+      ...(settings.menuSectionsJson?.promotions ?? {}),
+    },
+    nav: {
+      ...DEFAULT_MENU_SECTIONS.nav,
+      ...(settings.menuSectionsJson?.nav ?? {}),
+    },
+  }
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<MenuSectionsConfig>({
+    defaultValues: defaults,
+  })
+
+  const mutation = useMutation({
+    mutationFn: (data: MenuSectionsConfig) =>
+      settingsService.updateSettings({ menuSectionsJson: data }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['establishment-settings'] }),
+  })
+
+  const onSubmit = async (data: MenuSectionsConfig) => {
+    try {
+      await mutation.mutateAsync(data)
+    } catch (err) {
+      setError('root', { message: err instanceof ApiError ? err.message : 'Erro ao salvar' })
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6 rounded-[var(--radius-lg)] border border-border bg-surface p-5"
+    >
+      <div>
+        <h3 className="text-sm font-medium text-text">Textos das seções do cardápio público</h3>
+        <p className="mt-1 text-xs text-muted">
+          Altere os títulos e descrições exibidos no site do cliente.
+        </p>
+      </div>
+
+      <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-border p-4">
+        <legend className="px-1 text-sm font-medium text-accent">Favoritos</legend>
+        <Input label="Rótulo pequeno" {...register('favorites.kicker')} />
+        <Input label="Título" {...register('favorites.title')} />
+        <Textarea label="Descrição" rows={2} {...register('favorites.description')} />
+      </fieldset>
+
+      <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-border p-4">
+        <legend className="px-1 text-sm font-medium text-accent">Cardápio</legend>
+        <Input label="Rótulo pequeno" {...register('menu.kicker')} />
+        <Input label="Título" {...register('menu.title')} />
+        <Textarea label="Descrição" rows={2} {...register('menu.description')} />
+      </fieldset>
+
+      <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-border p-4">
+        <legend className="px-1 text-sm font-medium text-accent">Promoções</legend>
+        <Input label="Rótulo pequeno" {...register('promotions.kicker')} />
+        <Input label="Título" {...register('promotions.title')} />
+        <Textarea label="Descrição" rows={2} {...register('promotions.description')} />
+      </fieldset>
+
+      <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-border p-4">
+        <legend className="px-1 text-sm font-medium text-accent">Menu de navegação</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input label="Loja" {...register('nav.loja')} />
+          <Input label="Favoritos" {...register('nav.favoritos')} />
+          <Input label="Cardápio" {...register('nav.cardapio')} />
+          <Input label="Promoções / Ofertas" {...register('nav.promocoes')} />
+        </div>
+      </fieldset>
+
+      <SaveBar isSubmitting={isSubmitting} errorMessage={errors.root?.message} />
+    </form>
+  )
+}
+
 // Domínio / slug
 // ---------------------------------------------------------------------------
 
@@ -823,6 +957,7 @@ function DomainTab({
   settings: EstablishmentSettings
 }) {
   const queryClient = useQueryClient()
+  const { refreshUser } = useAuth()
   const [copied, setCopied] = useState(false)
 
   const {
@@ -844,9 +979,10 @@ function DomainTab({
       await establishmentService.update({ slug: data.slug } as Partial<Establishment>)
       return settingsService.updateSettings({ publicMenuSlug: data.publicMenuSlug })
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['establishment'] })
       queryClient.invalidateQueries({ queryKey: ['establishment-settings'] })
+      await refreshUser()
     },
   })
 

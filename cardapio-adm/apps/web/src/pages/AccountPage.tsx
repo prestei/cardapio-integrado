@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { ApiError } from '@/services/api'
 import { useAuth } from '@/hooks/useAuth'
-import { userRoleLabels } from '@/utils/format'
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Nome obrigatório'),
@@ -82,7 +81,7 @@ export function AccountPage() {
             </div>
             <div>
               <h2 className="font-display text-lg font-semibold text-text">{user.name}</h2>
-              <Badge variant="accent">{userRoleLabels[user.role]}</Badge>
+              <Badge variant="accent">Administrador</Badge>
             </div>
             {!editing && (
               <Button variant="outline" size="sm" className="ml-auto" onClick={startEdit}>
@@ -98,8 +97,7 @@ export function AccountPage() {
               <Input label="Telefone" {...register('phone')} />
               {unsupported && (
                 <p className="text-sm text-muted">
-                  A atualização de perfil não está disponível para o seu usuário no momento.
-                  Entre em contato com um administrador para alterar seus dados.
+                  Não foi possível atualizar o perfil neste momento. Tente novamente mais tarde.
                 </p>
               )}
               {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
@@ -123,7 +121,7 @@ export function AccountPage() {
                 </div>
               )}
               <div className="flex items-center gap-2 text-sm text-text">
-                <ShieldCheck className="h-4 w-4 text-muted" /> {userRoleLabels[user.role]}
+                <ShieldCheck className="h-4 w-4 text-muted" /> Administrador
               </div>
               {user.establishment && (
                 <div className="flex items-center gap-2 text-sm text-text">

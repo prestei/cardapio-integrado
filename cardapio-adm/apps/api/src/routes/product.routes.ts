@@ -10,6 +10,11 @@ router.use(requireAuth);
 
 router.get('/', requirePermission('products:list'), asyncHandler(productController.list));
 router.post('/', requirePermission('products:create'), asyncHandler(productController.create));
+router.patch(
+  '/reorder',
+  requirePermission('products:reorder'),
+  asyncHandler(productController.reorder),
+);
 router.get('/:id', requirePermission('products:list'), asyncHandler(productController.getById));
 router.patch(
   '/:id',

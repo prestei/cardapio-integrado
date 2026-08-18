@@ -21,6 +21,7 @@ import kdsRoutes from './kds.routes.js';
 import notificationSettingsRoutes from './notification-settings.routes.js';
 import notificationRoutes from './notification.routes.js';
 import webhookRoutes from './webhook.routes.js';
+import menuImportRoutes from './menu-import.routes.js';
 
 const router = Router();
 
@@ -46,6 +47,7 @@ router.use('/cash', cashRoutes);
 router.use('/kds', kdsRoutes);
 router.use('/notification-settings', notificationSettingsRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/menu-imports', menuImportRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok' });

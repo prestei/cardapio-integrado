@@ -34,6 +34,8 @@ export function HeroStore({ store }: HeroStoreProps) {
       onComplete: () => setReady(true),
     })
     return () => {
+      const cleanup = (tl as { __cleanup?: () => void }).__cleanup
+      cleanup?.()
       tl.kill()
     }
   }, [])
@@ -171,10 +173,7 @@ export function HeroStore({ store }: HeroStoreProps) {
             {store.name}
           </h1>
 
-          <p
-            data-hero-tagline
-            className="mt-4 max-w-md text-base font-light tracking-wide text-bone/75 opacity-0 sm:mt-5 sm:text-xl"
-          >
+          <p data-hero-tagline className="hero-tagline mt-5 max-w-lg opacity-0 sm:mt-6">
             {store.tagline}
           </p>
 

@@ -90,9 +90,9 @@ export function CardapioPage() {
 
       <div className="space-y-6">
         {activeCategories.map((category) => {
-          const categoryProducts = products.filter(
-            (p) => p.categoryId === category.id,
-          )
+          const categoryProducts = products
+            .filter((p) => p.categoryId === category.id)
+            .sort((a, b) => a.sortOrder - b.sortOrder)
 
           return (
             <section

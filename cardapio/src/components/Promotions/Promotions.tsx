@@ -1,4 +1,4 @@
-import type { Promotion, Product } from '@/types'
+import type { Promotion, Product, MenuSectionCopy } from '@/types'
 import { useUI } from '@/context/UIContext'
 import { EditorialCard } from '@/components/EditorialCard/EditorialCard'
 import { EditorialCarousel } from '@/components/EditorialCard/EditorialCarousel'
@@ -6,15 +6,15 @@ import { EditorialCarousel } from '@/components/EditorialCard/EditorialCarousel'
 interface PromotionsProps {
   promotions: Promotion[]
   products: Product[]
-  title?: string
+  copy?: MenuSectionCopy
 }
 
-export function Promotions({
-  promotions,
-  products,
-  title = 'Hoje tem mais',
-}: PromotionsProps) {
+export function Promotions({ promotions, products, copy }: PromotionsProps) {
   const { openProduct } = useUI()
+  const title = copy?.title ?? 'Hoje tem mais'
+  const kicker = copy?.kicker ?? 'Promoções'
+  const description =
+    copy?.description ?? 'Peças especiais do dia — para quem quer mais sabor por menos.'
 
   if (!promotions.length) return null
 
@@ -42,12 +42,12 @@ export function Promotions({
       <div className="relative mx-auto max-w-7xl">
         <div className="mb-8 px-4 sm:mb-12 sm:px-6 lg:mb-16 lg:px-8">
           <div data-reveal>
-            <p className="section-kicker mb-3">Promoções</p>
+            <p className="section-kicker mb-3">{kicker}</p>
             <h2 id="promocoes-title" className="section-title">
               {title}
             </h2>
             <p className="mt-3 max-w-md text-sm text-bone-muted sm:mt-4 sm:text-base">
-              Peças especiais do dia — para quem quer mais sabor por menos.
+              {description}
             </p>
           </div>
         </div>
@@ -55,7 +55,7 @@ export function Promotions({
         <div className="sm:px-6 lg:px-8">
           <EditorialCarousel
             items={promotions}
-            label="Promoções"
+            label={title}
             getKey={(p) => p.id}
             autoplayMs={8000}
             renderCard={(promo, { stacked }) => (
@@ -68,7 +68,7 @@ export function Promotions({
                 price={promo.promoPrice}
                 compareAtPrice={promo.originalPrice}
                 badge={`−${promo.discountPercent}%`}
-                meta={`Válido até ${new Date(promo.validUntil + 'T12:00:00').toLocaleDateString('pt-BR')}`}
+                meta={promo.validUntil ? `Até ${promo.validUntil}` : undefined}
                 ctaLabel={promo.ctaLabel}
                 stacked={stacked}
                 onCta={() => handleCta(promo)}

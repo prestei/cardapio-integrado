@@ -501,6 +501,24 @@ export interface BusinessHours {
   sortOrder?: number
 }
 
+export type MenuSectionCopy = {
+  kicker: string
+  title: string
+  description: string
+}
+
+export type MenuSectionsConfig = {
+  favorites: MenuSectionCopy
+  menu: MenuSectionCopy
+  promotions: MenuSectionCopy
+  nav: {
+    loja: string
+    favoritos: string
+    cardapio: string
+    promocoes: string
+  }
+}
+
 export interface EstablishmentSettings {
   id?: string
   deliveryFeeType: 'FIXED' | 'ZONE'
@@ -525,6 +543,7 @@ export interface EstablishmentSettings {
   scheduleMaxDaysAhead?: number | null
   publicMenuSlug?: string | null
   themeMode: 'dark' | 'light'
+  menuSectionsJson?: MenuSectionsConfig | null
   cancellationPolicy?: string | null
   deliveryPolicy?: string | null
   privacyPolicy?: string | null

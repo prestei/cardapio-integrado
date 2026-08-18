@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import gsap from 'gsap'
-import type { Category } from '@/types'
+import type { Category, MenuSectionCopy } from '@/types'
 import { useUI } from '@/context/UIContext'
 import { useMediaQuery } from '@/hooks/useSectionObserver'
 import { EditorialCard } from '@/components/EditorialCard/EditorialCard'
@@ -11,9 +11,10 @@ import { ensureGsap } from '@/animations/gsap'
 
 interface MenuSectionProps {
   categories: Category[]
+  sectionCopy?: MenuSectionCopy
 }
 
-export function MenuSection({ categories }: MenuSectionProps) {
+export function MenuSection({ categories, sectionCopy }: MenuSectionProps) {
   const { openProduct } = useUI()
   const [activeCat, setActiveCat] = useState(categories[0]?.id ?? '')
   const indicatorRef = useRef<HTMLSpanElement>(null)
@@ -52,15 +53,16 @@ export function MenuSection({ categories }: MenuSectionProps) {
       aria-labelledby="cardapio-title"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 px-4 sm:mb-12 sm:px-6 lg:mb-14 lg:px-8" data-reveal>
-          <p className="section-kicker mb-3">Cardápio</p>
-          <h2 id="cardapio-title" className="section-title">
-            Nosso cardápio
-          </h2>
-          <p className="mt-3 max-w-lg text-sm text-bone-muted sm:mt-4 sm:text-base">
-            Navegue pelas categorias. Cada prato foi pensado para ser escolhido com calma — ou com fome.
-          </p>
-        </div>
+          <div className="mb-8 px-4 sm:mb-12 sm:px-6 lg:mb-14 lg:px-8" data-reveal>
+            <p className="section-kicker mb-3">{sectionCopy?.kicker ?? 'Cardápio'}</p>
+            <h2 id="cardapio-title" className="section-title">
+              {sectionCopy?.title ?? 'Nosso cardápio'}
+            </h2>
+            <p className="mt-3 max-w-lg text-sm text-bone-muted sm:mt-4 sm:text-base">
+              {sectionCopy?.description ??
+                'Navegue pelas categorias. Cada prato foi pensado para ser escolhido com calma — ou com fome.'}
+            </p>
+          </div>
 
         <div
           className={cn(

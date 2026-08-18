@@ -32,6 +32,8 @@ export function createHeroTimeline(
     return g.timeline()
   }
 
+  const targets = [image, logo, name, tagline, cta, ...chrome].filter(Boolean)
+
   const tl = g.timeline({
     defaults: { ease: 'power3.out' },
     onComplete: opts?.onComplete,
@@ -53,6 +55,13 @@ export function createHeroTimeline(
     .to(tagline, { opacity: 1, y: 0, duration: 0.7 }, '-=0.4')
     .to(cta, { opacity: 1, y: 0, duration: 0.65 }, '-=0.35')
     .to(chrome, { opacity: 1, duration: 0.6 }, '-=0.4')
+
+  // HMR / remount: kill() can leave opacity:0 — always restore on cleanup.
+  const cleanup = () => {
+    g.killTweensOf(targets)
+    g.set(targets, { clearProps: 'all', opacity: 1, y: 0, scale: 1, filter: 'none' })
+  }
+  Object.assign(tl, { __cleanup: cleanup })
 
   return tl
 }

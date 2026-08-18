@@ -54,13 +54,11 @@ export const dashboardService = {
       message: alert.message,
       createdAt: alert.createdAt ?? new Date().toISOString(),
       link:
-        alert.type.startsWith('product_')
+        alert.type.startsWith('product_') || alert.type === 'promotion_expired'
           ? '/produtos'
-          : alert.type === 'promotion_expired'
-            ? '/marketing'
-            : alert.type.startsWith('order_') || alert.type === 'payment_failed'
-              ? '/pedidos'
-              : null,
+          : alert.type.startsWith('order_') || alert.type === 'payment_failed'
+            ? '/pedidos'
+            : null,
     }))
   },
 }

@@ -2,6 +2,7 @@
 
 @theme {
   --font-display: 'Syne', sans-serif;
+  --font-hero: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-body: 'Karla', sans-serif;
 
   --color-ink: #0c0b0a;
@@ -118,6 +119,10 @@
     font-family: var(--font-display);
   }
 
+  .font-hero {
+    font-family: var(--font-hero);
+  }
+
   .font-body {
     font-family: var(--font-body);
   }
@@ -204,10 +209,27 @@
 }
 
 .hero-title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 0.95;
+  font-family: var(--font-hero);
+  font-weight: 500;
+  font-style: normal;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
   color: var(--color-bone);
-  font-size: clamp(2.25rem, 9vw, 6rem);
+  font-size: clamp(3rem, 11vw, 7.25rem);
+  text-wrap: balance;
+  text-shadow:
+    0 1px 0 rgb(12 11 10 / 0.25),
+    0 18px 48px rgb(12 11 10 / 0.45);
+}
+
+.hero-tagline {
+  font-family: var(--font-hero);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  color: rgb(240 235 227 / 0.78);
+  font-size: clamp(1.15rem, 2.6vw, 1.65rem);
+  text-wrap: pretty;
+  text-shadow: 0 8px 28px rgb(12 11 10 / 0.35);
 }

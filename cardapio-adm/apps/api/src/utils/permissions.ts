@@ -18,6 +18,7 @@ export type Permission =
   | 'products:delete'
   | 'products:duplicate'
   | 'products:updatePrice'
+  | 'products:reorder'
   | 'additionals:list'
   | 'additionals:manage'
   | 'coupons:list'
@@ -45,7 +46,8 @@ export type Permission =
   | 'kds:view'
   | 'notifications:manage'
   | 'payments:manage'
-  | 'favorites:manage';
+  | 'favorites:manage'
+  | 'menu:import';
 
 const ALL_OWNER: Permission[] = [
   'auth:me',
@@ -65,6 +67,7 @@ const ALL_OWNER: Permission[] = [
   'products:delete',
   'products:duplicate',
   'products:updatePrice',
+  'products:reorder',
   'additionals:list',
   'additionals:manage',
   'coupons:list',
@@ -93,6 +96,7 @@ const ALL_OWNER: Permission[] = [
   'notifications:manage',
   'payments:manage',
   'favorites:manage',
+  'menu:import',
 ];
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
@@ -116,6 +120,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'products:delete',
     'products:duplicate',
     'products:updatePrice',
+    'products:reorder',
     'additionals:list',
     'additionals:manage',
     'coupons:list',
@@ -142,6 +147,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'notifications:manage',
     'payments:manage',
     'favorites:manage',
+    'menu:import',
   ],
   ATTENDANT: [
     'auth:me',

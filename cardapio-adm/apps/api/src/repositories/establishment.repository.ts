@@ -82,6 +82,7 @@ export const establishmentRepository = {
       scheduleMinLeadMinutes?: number;
       publicMenuSlug?: string | null;
       themeMode?: string;
+      menuSectionsJson?: unknown;
       cancellationPolicy?: string | null;
       deliveryPolicy?: string | null;
       privacyPolicy?: string | null;
@@ -136,6 +137,12 @@ export const establishmentRepository = {
       scheduleMinLeadMinutes: data.scheduleMinLeadMinutes,
       publicMenuSlug: data.publicMenuSlug,
       themeMode: data.themeMode,
+      menuSectionsJson:
+        data.menuSectionsJson === undefined
+          ? undefined
+          : data.menuSectionsJson === null
+            ? Prisma.DbNull
+            : (data.menuSectionsJson as Prisma.InputJsonValue),
       cancellationPolicy: data.cancellationPolicy,
       deliveryPolicy: data.deliveryPolicy,
       privacyPolicy: data.privacyPolicy,

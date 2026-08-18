@@ -1,16 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-  FolderOpen,
-} from 'lucide-react'
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { Plus, Pencil, Trash2, FolderOpen, GripVertical } from 'lucide-react'
 import { categoriesService } from '@/services/categories'
 import type { Category } from '@/types'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -22,6 +32,7 @@ import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TableSkeleton } from '@/components/ui/Skeleton'
 import { ApiError } from '@/services/api'
+import { cn } from '@/utils/cn'
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Nome obrigatório'),
@@ -31,16 +42,72 @@ const categorySchema = z.object({
 
 type CategoryForm = z.infer<typeof categorySchema>
 
+function SortableCategoryCard({
+  category,
+  canDrag,
+  children,
+}: {
+  category: Category
+  canDrag: boolean
+  children: ReactNode
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: category.id,
+    disabled: !canDrag,
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={cn(
+        'flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4',
+        isDragging && 'z-10 border-accent/40 shadow-lg',
+      )}
+    >
+      {canDrag && (
+        <button
+          type="button"
+          className="shrink-0 cursor-grab touch-none rounded p-1.5 text-muted hover:bg-elevated hover:text-text active:cursor-grabbing"
+          aria-label={`Arrastar ${category.name}`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
+      {children}
+    </div>
+  )
+}
+
 export function CategoriesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Category | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<Category | null>(null)
+  const [orderedCategories, setOrderedCategories] = useState<Category[]>([])
   const queryClient = useQueryClient()
 
   const { data: categories = [], isLoading, error } = useQuery({
     queryKey: ['categories'],
     queryFn: categoriesService.list,
   })
+
+  useEffect(() => {
+    setOrderedCategories(
+      [...categories].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
+    )
+  }, [categories])
+
+  const canReorder = orderedCategories.length > 1
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   const {
     register,
@@ -85,9 +152,24 @@ export function CategoriesPage() {
   })
 
   const reorderMutation = useMutation({
-    mutationFn: categoriesService.reorder,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+    mutationFn: (items: Array<{ id: string; sortOrder: number }>) =>
+      categoriesService.reorder(items),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
   })
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (!canReorder) return
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = orderedCategories.findIndex((c) => c.id === active.id)
+    const newIndex = orderedCategories.findIndex((c) => c.id === over.id)
+    if (oldIndex < 0 || newIndex < 0) return
+    const next = arrayMove(orderedCategories, oldIndex, newIndex)
+    setOrderedCategories(next)
+    reorderMutation.mutate(next.map((c, index) => ({ id: c.id, sortOrder: index })))
+  }
 
   const openCreate = () => {
     setEditing(null)
@@ -128,22 +210,6 @@ export function CategoriesPage() {
     }
   }
 
-  const moveCategory = (index: number, direction: 'up' | 'down') => {
-    const sorted = [...categories].sort((a, b) => a.sortOrder - b.sortOrder)
-    const swapIndex = direction === 'up' ? index - 1 : index + 1
-    if (swapIndex < 0 || swapIndex >= sorted.length) return
-
-    const items = sorted.map((cat, i) => {
-      if (i === index) return { id: cat.id, sortOrder: sorted[swapIndex].sortOrder }
-      if (i === swapIndex) return { id: cat.id, sortOrder: sorted[index].sortOrder }
-      return { id: cat.id, sortOrder: cat.sortOrder }
-    })
-
-    reorderMutation.mutate(items)
-  }
-
-  const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder)
-
   return (
     <div>
       <PageHeader
@@ -156,6 +222,19 @@ export function CategoriesPage() {
           </Button>
         }
       />
+
+      {canReorder ? (
+        <p className="mb-4 text-xs text-muted">
+          Arraste pelo ícone ⋮⋮ para mudar a ordem. A mesma ordem aparece no cardápio público.
+        </p>
+      ) : (
+        !isLoading &&
+        orderedCategories.length === 1 && (
+          <p className="mb-4 text-xs text-muted">
+            Cadastre pelo menos 2 categorias para poder ordenar.
+          </p>
+        )
+      )}
 
       {isLoading && <TableSkeleton rows={5} />}
 
@@ -176,75 +255,59 @@ export function CategoriesPage() {
         </div>
       )}
 
-      {!isLoading && sortedCategories.length > 0 && (
-        <div className="space-y-2">
-          {sortedCategories.map((cat, index) => (
-            <div
-              key={cat.id}
-              className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4"
-            >
-              <div className="flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => moveCategory(index, 'up')}
-                  disabled={index === 0 || reorderMutation.isPending}
-                  className="rounded p-0.5 text-muted hover:bg-elevated hover:text-text disabled:opacity-30"
-                  aria-label="Mover para cima"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveCategory(index, 'down')}
-                  disabled={index === sortedCategories.length - 1 || reorderMutation.isPending}
-                  className="rounded p-0.5 text-muted hover:bg-elevated hover:text-text disabled:opacity-30"
-                  aria-label="Mover para baixo"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </div>
+      {!isLoading && orderedCategories.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={orderedCategories.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+            disabled={!canReorder}
+          >
+            <div className="space-y-2">
+              {orderedCategories.map((cat) => (
+                <SortableCategoryCard key={cat.id} category={cat} canDrag={canReorder}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-text">{cat.name}</h3>
+                      <Badge variant={cat.isActive ? 'success' : 'muted'}>
+                        {cat.isActive ? 'Ativa' : 'Inativa'}
+                      </Badge>
+                    </div>
+                    {cat.description && (
+                      <p className="mt-0.5 truncate text-sm text-muted">{cat.description}</p>
+                    )}
+                    <p className="mt-1 text-xs text-muted">
+                      {cat._count?.products ?? 0} produto(s)
+                    </p>
+                  </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-text">{cat.name}</h3>
-                  <Badge variant={cat.isActive ? 'success' : 'muted'}>
-                    {cat.isActive ? 'Ativa' : 'Inativa'}
-                  </Badge>
-                </div>
-                {cat.description && (
-                  <p className="mt-0.5 truncate text-sm text-muted">{cat.description}</p>
-                )}
-                <p className="mt-1 text-xs text-muted">
-                  {cat._count?.products ?? 0} produto(s)
-                </p>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    toggleMutation.mutate({ id: cat.id, isActive: !cat.isActive })
-                  }
-                >
-                  {cat.isActive ? 'Desativar' : 'Ativar'}
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => openEdit(cat)} aria-label="Editar">
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleteConfirm(cat)}
-                  aria-label="Excluir"
-                  className="text-danger hover:text-danger"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        toggleMutation.mutate({ id: cat.id, isActive: !cat.isActive })
+                      }
+                    >
+                      {cat.isActive ? 'Desativar' : 'Ativar'}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(cat)} aria-label="Editar">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteConfirm(cat)}
+                      aria-label="Excluir"
+                      className="text-danger hover:text-danger"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </SortableCategoryCard>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       <Modal

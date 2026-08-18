@@ -50,8 +50,8 @@ export function createApp() {
       allowedHeaders: ['Content-Type', 'Authorization'],
     }),
   );
-  app.use(helmet());
-  app.use(express.json({ limit: '1mb' }));
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(express.json({ limit: '6mb' }));
   app.use(
     pinoHttp({
       logger,

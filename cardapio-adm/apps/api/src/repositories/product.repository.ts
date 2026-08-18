@@ -82,7 +82,7 @@ export const productRepository = {
     description?: string;
     price?: number;
     promoPrice?: number | null;
-    imageUrl?: string;
+    imageUrl?: string | null;
     internalCode?: string;
     prepTimeMinutes?: number | null;
     stock?: number | null;
@@ -207,5 +207,16 @@ export const productRepository = {
       where: { establishmentId, categoryId },
       _max: { sortOrder: true },
     });
+  },
+
+  reorder(establishmentId: string, items: Array<{ id: string; sortOrder: number }>) {
+    return prisma.$transaction(
+      items.map((item) =>
+        prisma.product.updateMany({
+          where: { id: item.id, establishmentId },
+          data: { sortOrder: item.sortOrder },
+        }),
+      ),
+    );
   },
 };

@@ -27,4 +27,7 @@ export const productsService = {
 
   updatePrice: (id: string, input: UpdateProductPriceInput) =>
     api.patch<Product>(`/products/${id}/price`, input),
+
+  reorder: (items: Array<{ id: string; sortOrder: number }>) =>
+    api.patch<Product[]>('/products/reorder', { items }),
 }

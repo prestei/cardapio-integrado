@@ -16,14 +16,14 @@ const FAQS = [
       'Vá em "Adicionais", crie um grupo definindo o tipo de seleção (única ou múltipla), quantidade mínima/máxima e cadastre as opções. Depois, use "Produtos" no grupo para vincular quais itens do cardápio usarão aquele grupo.',
   },
   {
-    question: 'Como funcionam as zonas de entrega?',
+    question: 'Como configuro taxa e regras de delivery?',
     answer:
-      'Em "Entregas" → "Zonas" você cadastra bairros, regiões, faixas de CEP ou raios de distância com suas respectivas taxas. O sistema aplica a taxa correta automaticamente conforme o endereço do cliente.',
+      'Em "Configurações" você define se aceita delivery, pedido mínimo, taxa fixa ou por zona, frete grátis acima de um valor e o raio máximo de entrega.',
   },
   {
     question: 'Como acompanho pedidos de delivery em andamento?',
     answer:
-      'Em "Entregas" → "Operacional" você vê todos os pedidos de delivery, pode atribuir um entregador, marcar quando ele saiu para entrega e quando o pedido foi concluído.',
+      'Em "Pedidos" você vê todos os pedidos, inclusive delivery, e pode atualizar o status até a conclusão.',
   },
   {
     question: 'Como gero um QR Code para as mesas do meu estabelecimento?',

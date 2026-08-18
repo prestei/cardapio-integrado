@@ -5,6 +5,7 @@ import type {
   CreateProductInput,
   UpdateProductInput,
   UpdateProductPriceInput,
+  ReorderProductsInput,
 } from '../validators/product.schemas.js';
 
 export const productService = {
@@ -51,7 +52,12 @@ export const productService = {
 
     const updated = await productRepository.update(id, establishmentId, {
       ...input,
-      imageUrl: input.imageUrl === '' ? undefined : input.imageUrl,
+      imageUrl:
+        input.imageUrl === undefined
+          ? undefined
+          : input.imageUrl === ''
+            ? null
+            : input.imageUrl,
     });
     return updated;
   },
@@ -81,5 +87,10 @@ export const productService = {
       input.promoPrice,
     );
     return updated;
+  },
+
+  async reorder(establishmentId: string, input: ReorderProductsInput) {
+    await productRepository.reorder(establishmentId, input.items);
+    return this.list(establishmentId);
   },
 };

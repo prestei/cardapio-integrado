@@ -46,6 +46,40 @@ export const updateSettingsSchema = z.object({
   scheduleMinLeadMinutes: z.number().int().min(0).optional(),
   publicMenuSlug: z.string().optional().nullable(),
   themeMode: z.enum(['light', 'dark']).optional(),
+  menuSectionsJson: z
+    .object({
+      favorites: z
+        .object({
+          kicker: z.string().optional(),
+          title: z.string().optional(),
+          description: z.string().optional(),
+        })
+        .optional(),
+      menu: z
+        .object({
+          kicker: z.string().optional(),
+          title: z.string().optional(),
+          description: z.string().optional(),
+        })
+        .optional(),
+      promotions: z
+        .object({
+          kicker: z.string().optional(),
+          title: z.string().optional(),
+          description: z.string().optional(),
+        })
+        .optional(),
+      nav: z
+        .object({
+          loja: z.string().optional(),
+          favoritos: z.string().optional(),
+          cardapio: z.string().optional(),
+          promocoes: z.string().optional(),
+        })
+        .optional(),
+    })
+    .optional()
+    .nullable(),
   cancellationPolicy: z.string().optional().nullable(),
   deliveryPolicy: z.string().optional().nullable(),
   privacyPolicy: z.string().optional().nullable(),

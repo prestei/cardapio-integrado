@@ -8,23 +8,18 @@ import {
   PlusCircle,
   Ticket,
   Users,
-  Truck,
   QrCode,
   BarChart3,
-  UserCog,
   Settings,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
   X,
-  Megaphone,
-  Wallet,
   ChefHat,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { Badge } from '@/components/ui/Badge'
 import { useAuth } from '@/hooks/useAuth'
-import type { UserRole } from '@/types'
 
 interface SidebarProps {
   collapsed: boolean
@@ -38,7 +33,6 @@ interface NavItem {
   label: string
   icon: typeof LayoutDashboard
   end?: boolean
-  roles?: UserRole[]
 }
 
 const navItems: NavItem[] = [
@@ -48,16 +42,12 @@ const navItems: NavItem[] = [
   { to: '/categorias', label: 'Categorias', icon: FolderOpen },
   { to: '/produtos', label: 'Produtos', icon: Package },
   { to: '/adicionais', label: 'Adicionais', icon: PlusCircle },
-  { to: '/cozinha', label: 'Cozinha', icon: ChefHat, roles: ['OWNER', 'ADMIN', 'MANAGER', 'KITCHEN'] },
-  { to: '/caixa', label: 'Caixa', icon: Wallet, roles: ['OWNER', 'ADMIN', 'MANAGER', 'ATTENDANT'] },
-  { to: '/marketing', label: 'Marketing', icon: Megaphone, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-  { to: '/cupons', label: 'Cupons', icon: Ticket, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-  { to: '/clientes', label: 'Clientes', icon: Users, roles: ['OWNER', 'ADMIN', 'MANAGER', 'ATTENDANT'] },
-  { to: '/entregas', label: 'Entregas', icon: Truck, roles: ['OWNER', 'ADMIN', 'MANAGER', 'ATTENDANT', 'DELIVERY'] },
-  { to: '/qr-codes', label: 'QR Codes', icon: QrCode, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-  { to: '/funcionarios', label: 'Funcionários', icon: UserCog, roles: ['OWNER', 'ADMIN'] },
-  { to: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['OWNER', 'ADMIN'] },
+  { to: '/cozinha', label: 'Cozinha', icon: ChefHat },
+  { to: '/cupons', label: 'Cupons', icon: Ticket },
+  { to: '/clientes', label: 'Clientes', icon: Users },
+  { to: '/qr-codes', label: 'QR Codes', icon: QrCode },
+  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { to: '/configuracoes', label: 'Configurações', icon: Settings },
   { to: '/suporte', label: 'Suporte', icon: HelpCircle },
 ]
 
@@ -70,9 +60,7 @@ export function Sidebar({
   const { user } = useAuth()
   const location = useLocation()
   const establishment = user?.establishment
-  const visibleNavItems = navItems.filter(
-    (item) => !item.roles || !user || item.roles.includes(user.role),
-  )
+  const visibleNavItems = navItems
 
   const sidebarContent = (
     <>

@@ -105,6 +105,7 @@ model Establishment {
   updatedAt      DateTime @updatedAt
 
   users            User[]
+  menuImports      MenuImport[]
   categories       Category[]
   products         Product[]
   additionalGroups AdditionalGroup[]
@@ -148,6 +149,7 @@ model User {
   cashRegistersOpened CashRegister[]      @relation("CashOpenedBy")
   cashRegistersClosed CashRegister[]      @relation("CashClosedBy")
   cashMovements      CashMovement[]
+  menuImports        MenuImport[]
 
   @@unique([establishmentId, email])
   @@index([establishmentId])
@@ -544,6 +546,7 @@ model Settings {
   notifyPush             Boolean  @default(false)
   publicMenuSlug        String?
   themeMode             String   @default("dark")
+  menuSectionsJson      Json?
   cancellationPolicy    String?
   deliveryPolicy        String?
   privacyPolicy         String?
@@ -853,4 +856,58 @@ model CustomerFavorite {
 
   @@unique([establishmentId, phone, productId])
   @@index([establishmentId, phone])
+}
+
+enum MenuImportStatus {
+  PROCESSING
+  AWAITING_REVIEW
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model MenuImport {
+  id               String           @id @default(cuid())
+  establishmentId  String
+  userId           String
+  status           MenuImportStatus @default(PROCESSING)
+  displayFileName  String?
+  errorMessage     String?
+  errorDetails     String?          @db.Text
+  ocrText          String?          @db.Text
+  extractedData    Json?
+  processingSteps  Json?
+  statsCategories  Int              @default(0)
+  statsProducts    Int              @default(0)
+  statsAdditionals Int              @default(0)
+  confirmedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  establishment Establishment    @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files         MenuImportFile[]
+
+  @@index([establishmentId, createdAt])
+  @@index([establishmentId, status])
+}
+
+model MenuImportFile {
+  id              String   @id @default(cuid())
+  importId        String
+  establishmentId String
+  originalName    String
+  mimeType        String
+  size            Int
+  storagePath     String
+  pageIndex       Int      @default(0)
+  previewPath     String?
+  width           Int?
+  height          Int?
+  createdAt       DateTime @default(now())
+
+  import MenuImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  @@index([importId])
+  @@index([establishmentId])
 }

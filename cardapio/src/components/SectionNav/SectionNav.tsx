@@ -1,24 +1,37 @@
-import { motion, AnimatePresence } from 'motion/react'
-import { Home, Star, UtensilsCrossed, Tag } from 'lucide-react'
-import type { SectionId } from '@/types'
+import type { MenuSections, SectionId } from '@/types'
 import { useCart } from '@/context/CartContext'
 import { cn, formatCurrency } from '@/utils'
 import { scrollToSection } from '@/hooks/useSectionObserver'
+import { Home, Star, UtensilsCrossed, Tag } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 
-const ITEMS: { id: SectionId; label: string; Icon: typeof Home }[] = [
-  { id: 'loja', label: 'Loja', Icon: Home },
-  { id: 'favoritos', label: 'Favoritos', Icon: Star },
-  { id: 'cardapio', label: 'Cardápio', Icon: UtensilsCrossed },
-  { id: 'promocoes', label: 'Ofertas', Icon: Tag },
+const NAV_META: { id: SectionId; Icon: typeof Home; key: keyof MenuSections['nav'] }[] = [
+  { id: 'loja', Icon: Home, key: 'loja' },
+  { id: 'favoritos', Icon: Star, key: 'favoritos' },
+  { id: 'cardapio', Icon: UtensilsCrossed, key: 'cardapio' },
+  { id: 'promocoes', Icon: Tag, key: 'promocoes' },
 ]
 
 interface SectionNavProps {
   active: string
+  labels?: MenuSections['nav']
 }
 
-export function SectionNav({ active }: SectionNavProps) {
+export function SectionNav({ active, labels }: SectionNavProps) {
   const { itemCount, subtotal, openCart, isOpen, lastAddedAt } = useCart()
   const hasCart = itemCount > 0
+  const items = NAV_META.map((item) => ({
+    ...item,
+    label: labels?.[item.key] ?? (
+      item.key === 'loja'
+        ? 'Loja'
+        : item.key === 'favoritos'
+          ? 'Favoritos'
+          : item.key === 'cardapio'
+            ? 'Cardápio'
+            : 'Ofertas'
+    ),
+  }))
 
   return (
     <>
@@ -27,7 +40,7 @@ export function SectionNav({ active }: SectionNavProps) {
         aria-label="Seções do cardápio"
         className="fixed top-1/2 right-5 z-30 hidden -translate-y-1/2 flex-col gap-5 lg:flex"
       >
-        {ITEMS.map((item) => {
+        {items.map((item) => {
           const isActive = active === item.id
           return (
             <button
@@ -114,7 +127,7 @@ export function SectionNav({ active }: SectionNavProps) {
 
         <nav aria-label="Navegação rápida" className="px-1 pt-1">
           <ul className="mx-auto flex max-w-lg items-stretch justify-between">
-            {ITEMS.map((item) => {
+            {items.map((item) => {
               const isActive = active === item.id
               const { Icon } = item
               return (

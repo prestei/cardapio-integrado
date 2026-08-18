@@ -15,6 +15,7 @@ import type {
   CreatePublicOrderInput,
   ValidateCouponInput,
 } from '../validators/public.schemas.js';
+import { normalizeMenuSections } from '../utils/menuSections.js';
 
 interface StatusHistoryEntry {
   status: OrderStatus;
@@ -375,6 +376,7 @@ export const publicService = {
         isOpen: establishment.isOpen,
       },
       openStatus,
+      sections: normalizeMenuSections(settings?.menuSectionsJson),
       settings: {
         minOrderValue: settings?.minOrderValue != null ? Number(settings.minOrderValue) : null,
         estimatedMinutes: settings?.estimatedMinutes ?? null,
@@ -424,6 +426,7 @@ export const publicService = {
       featuredProducts: categories
         .flatMap((c) => c.products)
         .filter((p) => p.isFeatured)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
         .map((product) => ({
           id: product.id,
           categoryId: product.categoryId,
@@ -434,6 +437,7 @@ export const publicService = {
           imageUrl: product.imageUrl ?? product.images[0]?.url ?? null,
           isAvailable: product.isAvailable,
           isFeatured: true,
+          sortOrder: product.sortOrder,
           hasAdditionals: product.additionalGroups.length > 0,
         })),
     };

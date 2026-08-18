@@ -4,6 +4,7 @@ import {
   createProductSchema,
   updateProductPriceSchema,
   updateProductSchema,
+  reorderProductsSchema,
 } from '../validators/product.schemas.js';
 import { serialize } from '../utils/serialize.js';
 import { menuEvents, type MenuEventType } from '../lib/menuEvents.js';
@@ -62,6 +63,14 @@ export const productController = {
     const body = updateProductPriceSchema.parse(req.body);
     const establishmentId = req.user!.establishmentId;
     const result = await productService.updatePrice(req.params.id!, establishmentId, body);
+    notifyMenu(establishmentId, 'product:updated');
+    res.json(serialize(result));
+  },
+
+  async reorder(req: Request, res: Response) {
+    const body = reorderProductsSchema.parse(req.body);
+    const establishmentId = req.user!.establishmentId;
+    const result = await productService.reorder(establishmentId, body);
     notifyMenu(establishmentId, 'product:updated');
     res.json(serialize(result));
   },

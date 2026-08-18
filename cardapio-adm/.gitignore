@@ -11,3 +11,4 @@ coverage
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
 .pgdata
+apps/api/uploads

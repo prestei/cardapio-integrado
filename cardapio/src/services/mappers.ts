@@ -2,12 +2,39 @@ import type {
   AddonGroup,
   Category,
   MenuData,
+  MenuSections,
   Product,
   Promotion,
   Store,
   StoreImage,
 } from '@/types'
 import { mockMenu } from '@/data/mock'
+
+const DEFAULT_SECTIONS: MenuSections = {
+  favorites: {
+    kicker: 'Seleção',
+    title: 'Favoritos da casa',
+    description:
+      'Os pratos que definem a casa — escolhidos para despertar desejo antes da escolha.',
+  },
+  menu: {
+    kicker: 'Cardápio',
+    title: 'Nosso cardápio',
+    description:
+      'Navegue pelas categorias. Cada prato foi pensado para ser escolhido com calma — ou com fome.',
+  },
+  promotions: {
+    kicker: 'Promoções',
+    title: 'Hoje tem mais',
+    description: 'Peças especiais do dia — para quem quer mais sabor por menos.',
+  },
+  nav: {
+    loja: 'Loja',
+    favoritos: 'Favoritos',
+    cardapio: 'Cardápio',
+    promocoes: 'Ofertas',
+  },
+}
 
 /** API public menu payload (cardapio-adm) */
 export interface ApiMenuResponse {
@@ -26,6 +53,7 @@ export interface ApiMenuResponse {
     isOpen: boolean
   }
   openStatus?: { isOpenNow: boolean }
+  sections?: Partial<MenuSections>
   categories: Array<{
     id: string
     name: string
@@ -253,5 +281,23 @@ export function mapMenuResponse(data: ApiMenuResponse): MenuData {
     categories,
     featuredProducts,
     promotions: buildPromotions(allProducts),
+    sections: {
+      favorites: {
+        ...DEFAULT_SECTIONS.favorites,
+        ...(data.sections?.favorites ?? {}),
+      },
+      menu: {
+        ...DEFAULT_SECTIONS.menu,
+        ...(data.sections?.menu ?? {}),
+      },
+      promotions: {
+        ...DEFAULT_SECTIONS.promotions,
+        ...(data.sections?.promotions ?? {}),
+      },
+      nav: {
+        ...DEFAULT_SECTIONS.nav,
+        ...(data.sections?.nav ?? {}),
+      },
+    },
   }
 }

@@ -63,16 +63,20 @@ function MenuExperience({ data }: { data: MenuData }) {
       </a>
 
       <Header store={data.store} compact={compactHeader} />
-      <SectionNav active={activeSection} />
+      <SectionNav active={activeSection} labels={data.sections.nav} />
 
       <main>
         <HeroStore store={data.store} />
         {data.featuredProducts.length > 0 && (
-          <Favorites products={data.featuredProducts} />
+          <Favorites products={data.featuredProducts} copy={data.sections.favorites} />
         )}
-        <MenuSection categories={data.categories} />
+        <MenuSection categories={data.categories} sectionCopy={data.sections.menu} />
         {data.promotions.length > 0 && (
-          <Promotions promotions={data.promotions} products={allProducts} />
+          <Promotions
+            promotions={data.promotions}
+            products={allProducts}
+            copy={data.sections.promotions}
+          />
         )}
       </main>
 

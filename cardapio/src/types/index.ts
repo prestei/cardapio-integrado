@@ -97,11 +97,30 @@ export interface CartItem {
   addons: CartAddon[]
 }
 
+export interface MenuSectionCopy {
+  kicker: string
+  title: string
+  description: string
+}
+
+export interface MenuSections {
+  favorites: MenuSectionCopy
+  menu: MenuSectionCopy
+  promotions: MenuSectionCopy
+  nav: {
+    loja: string
+    favoritos: string
+    cardapio: string
+    promocoes: string
+  }
+}
+
 export interface MenuData {
   store: Store
   categories: Category[]
   featuredProducts: Product[]
   promotions: Promotion[]
+  sections: MenuSections
 }
 
 export type SectionId = 'loja' | 'favoritos' | 'cardapio' | 'promocoes'

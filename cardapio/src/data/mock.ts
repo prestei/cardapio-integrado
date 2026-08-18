@@ -437,6 +437,31 @@ export const mockMenu: MenuData = {
       ctaLabel: 'Pedir asas',
     },
   ],
+  sections: {
+    favorites: {
+      kicker: 'Seleção',
+      title: 'Favoritos da casa',
+      description:
+        'Os pratos que definem a casa — escolhidos para despertar desejo antes da escolha.',
+    },
+    menu: {
+      kicker: 'Cardápio',
+      title: 'Nosso cardápio',
+      description:
+        'Navegue pelas categorias. Cada prato foi pensado para ser escolhido com calma — ou com fome.',
+    },
+    promotions: {
+      kicker: 'Promoções',
+      title: 'Hoje tem mais',
+      description: 'Peças especiais do dia — para quem quer mais sabor por menos.',
+    },
+    nav: {
+      loja: 'Loja',
+      favoritos: 'Favoritos',
+      cardapio: 'Cardápio',
+      promocoes: 'Ofertas',
+    },
+  },
 }
 
 mockMenu.featuredProducts = mockMenu.categories
