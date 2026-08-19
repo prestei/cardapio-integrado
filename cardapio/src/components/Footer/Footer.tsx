@@ -33,7 +33,7 @@ export function Footer({ store }: FooterProps) {
       </div>
       <div className="mx-auto max-w-7xl border-t border-line/50 px-4 py-5 sm:px-6 lg:px-8">
         <p className="text-[0.7rem] tracking-[0.16em] text-bone/30 uppercase">
-          © {new Date().getFullYear()} {store.name} — experiência digital gastronômica
+          © {new Date().getFullYear()} {store.name} · comeon
         </p>
       </div>
     </footer>

@@ -298,7 +298,7 @@ export function ProductModal() {
                 disabled={!canAdd || adding}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAdd}
-                className="flex w-full min-h-13 items-center justify-between bg-brass px-5 font-display text-xs tracking-[0.2em] text-ink uppercase transition-opacity disabled:opacity-40"
+                className="flex w-full min-h-13 items-center justify-between bg-cta px-5 font-display text-xs tracking-[0.2em] text-white uppercase transition-opacity disabled:opacity-40"
               >
                 <span>{adding ? 'Adicionado' : 'Adicionar ao pedido'}</span>
                 <span id="product-total-price">{formatCurrency(total)}</span>

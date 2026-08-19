@@ -13,6 +13,7 @@ export interface EditorialCardProps {
   meta?: string
   ctaLabel: string
   stacked?: boolean
+  active?: boolean
   unavailable?: boolean
   onCta: () => void
 }
@@ -29,6 +30,7 @@ export function EditorialCard({
   meta,
   ctaLabel,
   stacked,
+  active = false,
   unavailable,
   onCta,
 }: EditorialCardProps) {
@@ -38,10 +40,11 @@ export function EditorialCard({
   return (
     <article
       className={cn(
-        'relative overflow-hidden bg-ink-elevated',
+        'relative overflow-hidden bg-ink-elevated transition-[box-shadow,ring-color] duration-700',
         stacked
           ? 'flex h-auto w-full flex-col'
           : 'grid h-[380px] w-full grid-cols-[1.05fr_0.95fr]',
+        active && !stacked && 'ring-1 ring-brass/25',
         unavailable && 'opacity-60',
       )}
     >
@@ -56,7 +59,10 @@ export function EditorialCard({
           alt={imageAlt}
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-cover"
+          className={cn(
+            'h-full w-full object-cover transition-transform duration-[1.4s] ease-[cubic-bezier(0.16,1,0.3,1)]',
+            active && 'scale-[1.06]',
+          )}
           draggable={false}
         />
         <div
@@ -138,7 +144,7 @@ export function EditorialCard({
             }}
             onPointerDown={(e) => e.stopPropagation()}
             className={cn(
-              'relative z-10 inline-flex min-h-12 items-center justify-center border border-brass bg-transparent px-6 font-display text-xs tracking-[0.22em] text-brass uppercase transition-colors hover:bg-brass hover:text-ink disabled:cursor-not-allowed disabled:opacity-40',
+              'relative z-10 inline-flex min-h-12 items-center justify-center border border-cta bg-cta px-6 font-display text-xs tracking-[0.22em] text-white uppercase transition-colors hover:bg-transparent hover:text-cta disabled:cursor-not-allowed disabled:opacity-40',
               stacked ? 'mt-5 w-full' : 'mt-4 w-full max-w-[200px]',
             )}
           >

@@ -123,7 +123,7 @@ export function MenuSection({ categories, sectionCopy }: MenuSectionProps) {
             label={`Produtos: ${current?.name ?? ''}`}
             getKey={(p) => p.id}
             emptyMessage="Nenhum produto nesta categoria."
-            renderCard={(product, { stacked }) => (
+            renderCard={(product, { stacked, active }) => (
               <EditorialCard
                 imageUrl={product.imageUrl}
                 imageAlt={product.name}
@@ -140,6 +140,7 @@ export function MenuSection({ categories, sectionCopy }: MenuSectionProps) {
                 }
                 ctaLabel="Adicionar"
                 stacked={stacked}
+                active={active}
                 unavailable={!product.isAvailable}
                 onCta={() => openProduct(product)}
               />

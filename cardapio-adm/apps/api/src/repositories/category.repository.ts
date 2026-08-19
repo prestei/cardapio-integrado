@@ -35,7 +35,7 @@ export const categoryRepository = {
   update(id: string, establishmentId: string, data: {
     name?: string;
     description?: string;
-    imageUrl?: string;
+    imageUrl?: string | null;
     sortOrder?: number;
     isActive?: boolean;
   }) {

@@ -50,10 +50,18 @@ export function LoginPage() {
         className="relative z-10 w-full max-w-md"
       >
         <div className="mb-8 text-center">
-          <h1 className="font-display text-3xl font-semibold text-text">
-            Cardápio
+          <div className="mb-3 flex justify-center">
+            <span className="grid h-8 w-8 place-items-center rounded-[6px] bg-gold">
+              <span className="h-2 w-2 rounded-full bg-bg" />
+            </span>
+          </div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-text">
+            comeon
           </h1>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-1 text-[10px] font-medium tracking-[0.28em] text-muted uppercase">
+            painel
+          </p>
+          <p className="mt-3 text-sm text-muted">
             Acesse o painel do seu estabelecimento
           </p>
         </div>

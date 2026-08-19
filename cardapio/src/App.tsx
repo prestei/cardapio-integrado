@@ -5,7 +5,7 @@ import { fetchMenu } from '@/services/menu.service'
 import { CartProvider } from '@/context/CartContext'
 import { UIProvider, useUI } from '@/context/UIContext'
 import { MenuProvider } from '@/context/MenuContext'
-import { useSectionObserver } from '@/hooks/useSectionObserver'
+import { useMediaQuery, useSectionObserver } from '@/hooks/useSectionObserver'
 import { revealOnScroll } from '@/animations/gsap'
 import { Header } from '@/components/Header/Header'
 import { SectionNav } from '@/components/SectionNav/SectionNav'
@@ -17,12 +17,14 @@ import { ProductModal } from '@/components/ProductModal/ProductModal'
 import { Cart } from '@/components/Cart/Cart'
 import { SearchOverlay } from '@/components/Search/SearchOverlay'
 import { Footer } from '@/components/Footer/Footer'
+import { MobileStorefront } from '@/components/MobileMenu/MobileStorefront'
 
 const DEFAULT_SLUG = import.meta.env.VITE_DEFAULT_SLUG || 'burger-house'
 
 function MenuExperience({ data }: { data: MenuData }) {
   const { activeSection, setActiveSection } = useUI()
   const [compactHeader, setCompactHeader] = useState(false)
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
 
   const onSection = useCallback(
     (id: SectionId) => setActiveSection(id),
@@ -44,20 +46,36 @@ function MenuExperience({ data }: { data: MenuData }) {
   }, [data.store.slug])
 
   useEffect(() => {
-    const root = document.documentElement
-    root.style.setProperty('--color-ink', data.store.primaryColor)
-    root.style.setProperty('--color-brass', data.store.secondaryColor)
-    root.style.setProperty('--color-bone', data.store.accentColor)
-    document.title = `${data.store.name} — Cardápio`
+    document.title = `${data.store.name} — comeon`
   }, [data.store])
 
+  useEffect(() => {
+    if (!data.store.secondaryColor) return
+    const root = document.documentElement
+    root.style.setProperty('--color-brass', data.store.secondaryColor)
+    return () => {
+      root.style.removeProperty('--color-brass')
+    }
+  }, [data.store.secondaryColor])
+
   const allProducts = data.categories.flatMap((c) => c.products)
+
+  if (!isDesktop) {
+    return (
+      <>
+        <MobileStorefront data={data} />
+        <SectionNav active={activeSection} labels={data.sections.nav} hideMobileTabs />
+        <Cart />
+        <ProductModal />
+      </>
+    )
+  }
 
   return (
     <>
       <a
         href="#cardapio"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:bg-brass focus:px-4 focus:py-2 focus:text-ink"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:bg-cta focus:px-4 focus:py-2 focus:text-white"
       >
         Ir para o cardápio
       </a>
@@ -123,8 +141,11 @@ function MenuPage() {
   if (loading) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center bg-ink">
-        <p className="font-display text-2xl tracking-[0.35em] text-brass">CARDÁPIO</p>
-        <span className="mt-6 h-px w-16 origin-left animate-pulse bg-brass/60" />
+        <span className="grid h-8 w-8 place-items-center rounded-[6px] bg-gold">
+          <span className="h-2 w-2 rounded-full bg-ink" />
+        </span>
+        <p className="mt-4 font-display text-2xl tracking-tight text-bone">comeon</p>
+        <span className="mt-6 h-px w-16 origin-left animate-pulse bg-cta/60" />
       </div>
     )
   }

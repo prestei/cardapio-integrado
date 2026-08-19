@@ -30,7 +30,7 @@ export function LoginBackground() {
     ]
 
     const material = new THREE.MeshBasicMaterial({
-      color: 0xe8a54b,
+      color: 0x6366f1,
       wireframe: true,
       transparent: true,
       opacity: 0.08,
@@ -43,7 +43,7 @@ export function LoginBackground() {
       return mesh
     })
 
-    const gridHelper = new THREE.GridHelper(20, 20, 0xe8a54b, 0x2e2e2e)
+    const gridHelper = new THREE.GridHelper(20, 20, 0x6366f1, 0x2a3148)
     gridHelper.material.transparent = true
     gridHelper.material.opacity = 0.04
     scene.add(gridHelper)

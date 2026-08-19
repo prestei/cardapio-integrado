@@ -43,7 +43,8 @@ export function Favorites({ products, copy }: FavoritesProps) {
             items={products}
             label={title}
             getKey={(p) => p.id}
-            renderCard={(product, { stacked }) => (
+            autoplayMs={7000}
+            renderCard={(product, { stacked, active }) => (
               <EditorialCard
                 imageUrl={product.imageUrl}
                 imageAlt={product.name}
@@ -60,6 +61,7 @@ export function Favorites({ products, copy }: FavoritesProps) {
                 }
                 ctaLabel="Adicionar"
                 stacked={stacked}
+                active={active}
                 unavailable={!product.isAvailable}
                 onCta={() => openProduct(product)}
               />

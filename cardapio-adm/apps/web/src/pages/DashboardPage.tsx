@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import gsap from 'gsap'
@@ -34,6 +34,7 @@ import type { DashboardAlertSeverity, DashboardPeriod } from '@/types'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/Spinner'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { StoreOpenStatus } from '@/components/ui/StoreOpenStatus'
 import {
   formatCurrency,
   formatComparison,
@@ -186,6 +187,88 @@ function defaultCustomRange() {
   }
 }
 
+function PeriodSelector({
+  period,
+  setPeriod,
+  customRange,
+  setCustomRange,
+}: {
+  period: DashboardPeriod
+  setPeriod: (value: DashboardPeriod) => void
+  customRange: { from: string; to: string }
+  setCustomRange: Dispatch<SetStateAction<{ from: string; to: string }>>
+}) {
+  return (
+    <div className="flex flex-col items-stretch gap-2 sm:items-end">
+      <div className="flex flex-wrap rounded-[var(--radius-md)] border border-border bg-surface p-0.5">
+        {PERIODS.map((p) => (
+          <button
+            key={p.value}
+            type="button"
+            onClick={() => setPeriod(p.value)}
+            className={cn(
+              'rounded-[var(--radius-sm)] px-3 py-1.5 text-sm transition-colors',
+              period === p.value
+                ? 'bg-accent-muted text-accent font-medium'
+                : 'text-muted hover:text-text',
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      {period === 'custom' && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <label className="text-muted" htmlFor="dash-from">
+            De
+          </label>
+          <input
+            id="dash-from"
+            type="date"
+            value={customRange.from}
+            onChange={(e) => setCustomRange((r) => ({ ...r, from: e.target.value }))}
+            className="rounded-[var(--radius-sm)] border border-border bg-elevated px-2 py-1 text-text"
+          />
+          <label className="text-muted" htmlFor="dash-to">
+            Até
+          </label>
+          <input
+            id="dash-to"
+            type="date"
+            value={customRange.to}
+            onChange={(e) => setCustomRange((r) => ({ ...r, to: e.target.value }))}
+            className="rounded-[var(--radius-sm)] border border-border bg-elevated px-2 py-1 text-text"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DashboardHeaderActions({
+  period,
+  setPeriod,
+  customRange,
+  setCustomRange,
+}: {
+  period: DashboardPeriod
+  setPeriod: (value: DashboardPeriod) => void
+  customRange: { from: string; to: string }
+  setCustomRange: Dispatch<SetStateAction<{ from: string; to: string }>>
+}) {
+  return (
+    <div className="flex flex-col items-stretch gap-3 sm:items-end">
+      <StoreOpenStatus toggleable />
+      <PeriodSelector
+        period={period}
+        setPeriod={setPeriod}
+        customRange={customRange}
+        setCustomRange={setCustomRange}
+      />
+    </div>
+  )
+}
+
 export function DashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriod>('7d')
   const [customRange, setCustomRange] = useState(defaultCustomRange)
@@ -217,16 +300,44 @@ export function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <Spinner size="lg" />
+      <div ref={containerRef}>
+        <PageHeader
+          title="Visão geral"
+          description="Acompanhe o desempenho do seu estabelecimento"
+          actions={
+            <DashboardHeaderActions
+              period={period}
+              setPeriod={setPeriod}
+              customRange={customRange}
+              setCustomRange={setCustomRange}
+            />
+          }
+        />
+        <div className="flex min-h-[400px] items-center justify-center">
+          <Spinner size="lg" />
+        </div>
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-8 text-center">
-        <p className="text-danger">Erro ao carregar métricas do dashboard</p>
+      <div ref={containerRef}>
+        <PageHeader
+          title="Visão geral"
+          description="Acompanhe o desempenho do seu estabelecimento"
+          actions={
+            <DashboardHeaderActions
+              period={period}
+              setPeriod={setPeriod}
+              customRange={customRange}
+              setCustomRange={setCustomRange}
+            />
+          }
+        />
+        <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-8 text-center">
+          <p className="text-danger">Erro ao carregar métricas do dashboard</p>
+        </div>
       </div>
     )
   }
@@ -243,53 +354,12 @@ export function DashboardPage() {
         title="Visão geral"
         description="Acompanhe o desempenho do seu estabelecimento"
         actions={
-          <div className="flex flex-col items-stretch gap-2 sm:items-end">
-            <div className="flex flex-wrap rounded-[var(--radius-md)] border border-border bg-surface p-0.5">
-              {PERIODS.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => setPeriod(p.value)}
-                  className={cn(
-                    'rounded-[var(--radius-sm)] px-3 py-1.5 text-sm transition-colors',
-                    period === p.value
-                      ? 'bg-accent-muted text-accent font-medium'
-                      : 'text-muted hover:text-text',
-                  )}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-            {period === 'custom' && (
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <label className="text-muted" htmlFor="dash-from">
-                  De
-                </label>
-                <input
-                  id="dash-from"
-                  type="date"
-                  value={customRange.from}
-                  onChange={(e) =>
-                    setCustomRange((r) => ({ ...r, from: e.target.value }))
-                  }
-                  className="rounded-[var(--radius-sm)] border border-border bg-elevated px-2 py-1 text-text"
-                />
-                <label className="text-muted" htmlFor="dash-to">
-                  Até
-                </label>
-                <input
-                  id="dash-to"
-                  type="date"
-                  value={customRange.to}
-                  onChange={(e) =>
-                    setCustomRange((r) => ({ ...r, to: e.target.value }))
-                  }
-                  className="rounded-[var(--radius-sm)] border border-border bg-elevated px-2 py-1 text-text"
-                />
-              </div>
-            )}
-          </div>
+          <DashboardHeaderActions
+            period={period}
+            setPeriod={setPeriod}
+            customRange={customRange}
+            setCustomRange={setCustomRange}
+          />
         }
       />
 

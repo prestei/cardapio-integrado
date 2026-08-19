@@ -100,6 +100,7 @@ export const mockMenu: MenuData = {
     secondaryColor: '#D4A574',
     accentColor: '#E8E2D9',
     isOpen: true,
+    estimatedMinutes: 25,
     images: [
       {
         id: 'img-1',

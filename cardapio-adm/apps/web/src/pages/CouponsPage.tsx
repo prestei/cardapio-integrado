@@ -3,7 +3,23 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, Ticket, Archive, ArchiveRestore } from 'lucide-react'
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Ticket,
+  Archive,
+  ArchiveRestore,
+  Search,
+  CheckCircle2,
+  Percent,
+  Truck,
+  Calendar,
+  Users,
+  Power,
+  Sparkles,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { couponsService } from '@/services/coupons'
 import type { Coupon, CouponType } from '@/types'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -14,9 +30,11 @@ import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { TableSkeleton } from '@/components/ui/Skeleton'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { ApiError } from '@/services/api'
 import { formatCurrency, formatDate } from '@/utils/format'
+import { useDebounce } from '@/hooks/useDebounce'
+import { cn } from '@/utils/cn'
 
 const couponSchema = z
   .object({
@@ -54,6 +72,8 @@ interface CouponPayload {
   endsAt: string | null
 }
 
+type StatusFilter = 'all' | 'active' | 'scheduled' | 'expired' | 'archived'
+
 const TYPE_OPTIONS: { value: CouponType; label: string }[] = [
   { value: 'PERCENTAGE', label: 'Percentual (%)' },
   { value: 'FIXED', label: 'Valor fixo (R$)' },
@@ -66,13 +86,40 @@ const couponTypeLabels: Record<CouponType, string> = {
   FREE_DELIVERY: 'Frete grátis',
 }
 
+const TYPE_META: Record<
+  CouponType,
+  { icon: LucideIcon; bar: string; wrap: string; text: string }
+> = {
+  PERCENTAGE: {
+    icon: Percent,
+    bar: 'bg-accent',
+    wrap: 'bg-accent-muted text-accent',
+    text: 'text-accent',
+  },
+  FIXED: {
+    icon: Sparkles,
+    bar: 'bg-gold',
+    wrap: 'bg-gold-muted text-gold',
+    text: 'text-gold',
+  },
+  FREE_DELIVERY: {
+    icon: Truck,
+    bar: 'bg-success',
+    wrap: 'bg-success/15 text-success',
+    text: 'text-success',
+  },
+}
+
 function formatCouponValue(coupon: Coupon): string {
   if (coupon.type === 'PERCENTAGE') return `${coupon.value}%`
   if (coupon.type === 'FREE_DELIVERY') return 'Frete grátis'
   return formatCurrency(coupon.value)
 }
 
-function couponStatus(coupon: Coupon): { label: string; variant: 'success' | 'muted' | 'warning' | 'danger' } {
+function couponStatus(coupon: Coupon): {
+  label: string
+  variant: 'success' | 'muted' | 'warning' | 'danger'
+} {
   if (coupon.isArchived) return { label: 'Arquivado', variant: 'muted' }
   if (!coupon.isActive) return { label: 'Inativo', variant: 'muted' }
   const now = new Date()
@@ -84,8 +131,40 @@ function couponStatus(coupon: Coupon): { label: string; variant: 'success' | 'mu
   return { label: 'Ativo', variant: 'success' }
 }
 
+function isActiveNow(coupon: Coupon) {
+  const status = couponStatus(coupon)
+  return status.label === 'Ativo'
+}
+
+function usageLabel(coupon: Coupon) {
+  if (coupon.usageLimit != null) {
+    return `${coupon.usageCount} / ${coupon.usageLimit} usos`
+  }
+  return `${coupon.usageCount} usos`
+}
+
+function CouponsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-[4.5rem] w-full rounded-[var(--radius-lg)]" />
+        ))}
+      </div>
+      <Skeleton className="h-12 w-full rounded-[var(--radius-lg)]" />
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 w-full rounded-[var(--radius-lg)]" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function CouponsPage() {
-  const [showArchived, setShowArchived] = useState(false)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const debouncedSearch = useDebounce(search)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Coupon | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<Coupon | null>(null)
@@ -96,7 +175,26 @@ export function CouponsPage() {
     queryFn: couponsService.list,
   })
 
-  const visibleCoupons = coupons.filter((c) => showArchived || !c.isArchived)
+  const filteredCoupons = coupons.filter((coupon) => {
+    const q = debouncedSearch.toLowerCase()
+    const matchesSearch =
+      coupon.code.toLowerCase().includes(q) ||
+      (coupon.description ?? '').toLowerCase().includes(q)
+    if (!matchesSearch) return false
+
+    const status = couponStatus(coupon).label
+    if (statusFilter === 'active') return status === 'Ativo'
+    if (statusFilter === 'scheduled') return status === 'Agendado'
+    if (statusFilter === 'expired') return status === 'Expirado' || status === 'Esgotado'
+    if (statusFilter === 'archived') return coupon.isArchived
+    if (statusFilter === 'all') return !coupon.isArchived
+    return true
+  })
+
+  const nonArchived = coupons.filter((c) => !c.isArchived)
+  const activeCount = nonArchived.filter(isActiveNow).length
+  const totalUses = coupons.reduce((sum, c) => sum + c.usageCount, 0)
+  const archivedCount = coupons.filter((c) => c.isArchived).length
 
   const {
     register,
@@ -211,11 +309,19 @@ export function CouponsPage() {
     }
   }
 
+  const filters: { id: StatusFilter; label: string }[] = [
+    { id: 'all', label: 'Todos' },
+    { id: 'active', label: 'Ativos' },
+    { id: 'scheduled', label: 'Agendados' },
+    { id: 'expired', label: 'Expirados' },
+    { id: 'archived', label: 'Arquivados' },
+  ]
+
   return (
     <div>
       <PageHeader
         title="Cupons"
-        description="Crie e gerencie cupons de desconto"
+        description="Descontos e frete grátis para atrair clientes — BEMVINDO10, FDS20 e campanhas sazonais."
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
@@ -224,19 +330,7 @@ export function CouponsPage() {
         }
       />
 
-      <div className="mb-4 flex items-center gap-2">
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={showArchived}
-            onChange={(e) => setShowArchived(e.target.checked)}
-            className="rounded border-border"
-          />
-          Mostrar arquivados
-        </label>
-      </div>
-
-      {isLoading && <TableSkeleton rows={5} />}
+      {isLoading && <CouponsSkeleton />}
 
       {error && (
         <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-8 text-center text-danger">
@@ -244,104 +338,258 @@ export function CouponsPage() {
         </div>
       )}
 
-      {!isLoading && !error && visibleCoupons.length === 0 && (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-surface">
+      {!isLoading && !error && coupons.length === 0 && (
+        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+          <div className="h-1.5 bg-gradient-to-r from-accent via-gold to-success" />
           <EmptyState
             icon={Ticket}
-            title="Nenhum cupom"
-            description="Crie cupons de desconto para atrair e fidelizar clientes."
+            title="Crie seu primeiro cupom"
+            description="Ofereça desconto percentual, valor fixo ou frete grátis. Defina validade e limite de usos para controlar a campanha."
             action={{ label: 'Novo cupom', onClick: openCreate }}
           />
         </div>
       )}
 
-      {!isLoading && visibleCoupons.length > 0 && (
-        <div className="space-y-2">
-          {visibleCoupons.map((coupon) => {
-            const status = couponStatus(coupon)
-            return (
-              <div
-                key={coupon.id}
-                className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4 sm:flex-row sm:items-center"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-mono font-semibold tracking-wide text-text">
-                      {coupon.code}
-                    </h3>
-                    <Badge variant={status.variant}>{status.label}</Badge>
-                    <Badge variant="accent">{couponTypeLabels[coupon.type]}</Badge>
-                  </div>
-                  {coupon.description && (
-                    <p className="mt-0.5 truncate text-sm text-muted">{coupon.description}</p>
-                  )}
-                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted">
-                    <span className="font-medium text-accent">{formatCouponValue(coupon)}</span>
-                    {coupon.minOrderValue != null && (
-                      <span>Pedido mín. {formatCurrency(coupon.minOrderValue)}</span>
-                    )}
-                    {(coupon.startsAt || coupon.endsAt) && (
-                      <span>
-                        {coupon.startsAt ? formatDate(coupon.startsAt) : '—'} até{' '}
-                        {coupon.endsAt ? formatDate(coupon.endsAt) : '—'}
-                      </span>
-                    )}
-                    <span>
-                      Usado {coupon.usageCount}
-                      {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ''}×
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1">
-                  {!coupon.isArchived && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        toggleActiveMutation.mutate({ id: coupon.id, isActive: !coupon.isActive })
-                      }
-                    >
-                      {coupon.isActive ? 'Desativar' : 'Ativar'}
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(coupon)} aria-label="Editar">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      archiveMutation.mutate({ id: coupon.id, isArchived: !coupon.isArchived })
-                    }
-                    aria-label={coupon.isArchived ? 'Restaurar' : 'Arquivar'}
-                  >
-                    {coupon.isArchived ? (
-                      <ArchiveRestore className="h-4 w-4" />
-                    ) : (
-                      <Archive className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeleteConfirm(coupon)}
-                    aria-label="Excluir"
-                    className="text-danger hover:text-danger"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+      {!isLoading && coupons.length > 0 && (
+        <>
+          <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-accent-muted">
+                <Ticket className="h-5 w-5 text-accent" />
               </div>
-            )
-          })}
-        </div>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{nonArchived.length}</p>
+                <p className="text-sm text-muted">Cupons visíveis</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-success/15">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{activeCount}</p>
+                <p className="text-sm text-muted">Ativos agora</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-gold-muted">
+                <Users className="h-5 w-5 text-gold" />
+              </div>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{totalUses}</p>
+                <p className="text-sm text-muted">Usos totais</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-elevated">
+                <Archive className="h-5 w-5 text-muted" />
+              </div>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{archivedCount}</p>
+                <p className="text-sm text-muted">Arquivados</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input
+                type="search"
+                placeholder="Buscar por código ou descrição..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 w-full rounded-[var(--radius-md)] border border-border bg-elevated pr-3 pl-9 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+                aria-label="Buscar cupons"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {filters.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setStatusFilter(filter.id)}
+                  className={cn(
+                    'h-9 rounded-full px-3 text-sm font-medium transition-colors',
+                    statusFilter === filter.id
+                      ? 'bg-accent text-white'
+                      : 'bg-elevated text-muted hover:text-text',
+                  )}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filteredCoupons.length === 0 ? (
+            <div className="rounded-[var(--radius-lg)] border border-border bg-surface">
+              <EmptyState
+                icon={Search}
+                title="Nenhum cupom neste filtro"
+                description="Tente outro termo ou mude o filtro para ver mais cupons."
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredCoupons.map((coupon) => {
+                const status = couponStatus(coupon)
+                const meta = TYPE_META[coupon.type]
+                const Icon = meta.icon
+                const usagePercent =
+                  coupon.usageLimit != null && coupon.usageLimit > 0
+                    ? Math.min(100, (coupon.usageCount / coupon.usageLimit) * 100)
+                    : null
+
+                return (
+                  <div
+                    key={coupon.id}
+                    className={cn(
+                      'relative overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface',
+                      'transition-colors duration-150 hover:border-accent/35 hover:bg-elevated/40',
+                      (coupon.isArchived || !coupon.isActive) && 'opacity-75',
+                    )}
+                  >
+                    <span className={cn('absolute inset-y-0 left-0 w-1', meta.bar)} aria-hidden="true" />
+
+                    <div className="flex flex-col gap-4 p-4 pl-5 sm:flex-row sm:items-center sm:gap-4">
+                      <div
+                        className={cn(
+                          'flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-[var(--radius-md)]',
+                          meta.wrap,
+                        )}
+                      >
+                        <Icon className="h-5 w-5" strokeWidth={1.6} aria-hidden="true" />
+                        <span className={cn('mt-0.5 font-display text-xs font-bold', meta.text)}>
+                          {formatCouponValue(coupon)}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-mono text-base font-semibold tracking-[0.12em] text-text sm:text-lg">
+                            {coupon.code}
+                          </h3>
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                          <Badge variant="default">{couponTypeLabels[coupon.type]}</Badge>
+                        </div>
+
+                        {coupon.description ? (
+                          <p className="mt-1 line-clamp-1 text-sm text-muted">{coupon.description}</p>
+                        ) : (
+                          <p className="mt-1 text-sm text-muted/60 italic">Sem descrição</p>
+                        )}
+
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                          {coupon.minOrderValue != null && coupon.minOrderValue > 0 && (
+                            <span className="inline-flex items-center rounded-full bg-elevated px-2.5 py-1 text-xs text-muted">
+                              Pedido mín. {formatCurrency(coupon.minOrderValue)}
+                            </span>
+                          )}
+                          {(coupon.startsAt || coupon.endsAt) && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-elevated px-2.5 py-1 text-xs text-muted">
+                              <Calendar className="h-3.5 w-3.5" />
+                              {coupon.startsAt ? formatDate(coupon.startsAt) : '—'} →{' '}
+                              {coupon.endsAt ? formatDate(coupon.endsAt) : '—'}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-elevated px-2.5 py-1 text-xs text-muted">
+                            <Users className="h-3.5 w-3.5" />
+                            {usageLabel(coupon)}
+                          </span>
+                          {coupon.perCustomerLimit != null && (
+                            <span className="inline-flex items-center rounded-full bg-elevated px-2.5 py-1 text-xs text-muted">
+                              máx. {coupon.perCustomerLimit}/cliente
+                            </span>
+                          )}
+                        </div>
+
+                        {usagePercent != null && (
+                          <div className="mt-2.5 max-w-xs">
+                            <div className="mb-1 flex justify-between text-[10px] text-muted">
+                              <span>Uso da campanha</span>
+                              <span>{Math.round(usagePercent)}%</span>
+                            </div>
+                            <div className="h-1.5 overflow-hidden rounded-full bg-elevated">
+                              <div
+                                className={cn('h-full rounded-full transition-all', meta.bar)}
+                                style={{ width: `${usagePercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex shrink-0 flex-wrap items-center gap-2 self-end sm:self-center">
+                        {!coupon.isArchived && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              toggleActiveMutation.mutate({
+                                id: coupon.id,
+                                isActive: !coupon.isActive,
+                              })
+                            }
+                          >
+                            <Power className="h-4 w-4" />
+                            {coupon.isActive ? 'Desativar' : 'Ativar'}
+                          </Button>
+                        )}
+                        <div className="flex items-center gap-0.5 rounded-[var(--radius-md)] bg-elevated/80 p-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(coupon)}
+                            aria-label="Editar"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              archiveMutation.mutate({
+                                id: coupon.id,
+                                isArchived: !coupon.isArchived,
+                              })
+                            }
+                            aria-label={coupon.isArchived ? 'Restaurar' : 'Arquivar'}
+                            title={coupon.isArchived ? 'Restaurar' : 'Arquivar'}
+                          >
+                            {coupon.isArchived ? (
+                              <ArchiveRestore className="h-4 w-4" />
+                            ) : (
+                              <Archive className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteConfirm(coupon)}
+                            aria-label="Excluir"
+                            title="Excluir"
+                            className="text-danger hover:text-danger"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
 
       <Modal
         open={modalOpen}
         onClose={closeModal}
         title={editing ? 'Editar cupom' : 'Novo cupom'}
+        description="O código é o que o cliente digita no checkout — use letras maiúsculas e números."
         size="lg"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -66,15 +66,24 @@ export function Sidebar({
     <>
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         {!collapsed && (
-          <div className="min-w-0">
-            <p className="font-display text-lg font-semibold text-accent">Cardápio</p>
-            {establishment && (
-              <p className="truncate text-xs text-muted">{establishment.name}</p>
-            )}
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[5px] bg-gold">
+              <span className="h-1.5 w-1.5 rounded-full bg-bg" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-display text-[15px] font-semibold tracking-wide text-text">
+                comeon
+              </p>
+              <p className="text-[10px] font-medium tracking-[0.22em] text-muted uppercase">
+                painel
+              </p>
+            </div>
           </div>
         )}
         {collapsed && (
-          <span className="mx-auto font-display text-lg font-semibold text-accent">C</span>
+          <span className="mx-auto grid h-7 w-7 place-items-center rounded-[5px] bg-gold">
+            <span className="h-1.5 w-1.5 rounded-full bg-bg" />
+          </span>
         )}
         <button
           type="button"
@@ -88,6 +97,7 @@ export function Sidebar({
 
       {establishment && !collapsed && (
         <div className="border-b border-border px-4 py-3">
+          <p className="mb-2 truncate text-xs text-muted">{establishment.name}</p>
           <div className="flex items-center gap-2">
             <Badge variant="accent">{establishment.plan || 'Pro'}</Badge>
             <Badge variant={establishment.isOpen ? 'success' : 'muted'}>
@@ -114,7 +124,7 @@ export function Sidebar({
                     'group flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm transition-colors',
                     'hover:bg-elevated hover:text-text',
                     isActive
-                      ? 'bg-accent-muted text-accent font-medium'
+                      ? 'bg-elevated text-text font-medium'
                       : 'text-muted',
                     collapsed && 'justify-center px-2',
                   )}
@@ -123,7 +133,7 @@ export function Sidebar({
                   <Icon
                     className={cn(
                       'h-[18px] w-[18px] shrink-0',
-                      isActive ? 'text-accent' : 'text-muted group-hover:text-text',
+                      isActive ? 'text-accent-hover' : 'text-muted group-hover:text-text',
                     )}
                     aria-hidden="true"
                   />

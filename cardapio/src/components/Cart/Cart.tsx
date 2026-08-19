@@ -153,7 +153,7 @@ export function Cart() {
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.98 }}
-                  className="flex w-full min-h-12 items-center justify-center bg-brass font-display text-xs tracking-[0.22em] text-ink uppercase"
+                  className="flex w-full min-h-12 items-center justify-center bg-cta font-display text-xs tracking-[0.22em] text-white uppercase"
                 >
                   Finalizar pedido
                 </motion.button>

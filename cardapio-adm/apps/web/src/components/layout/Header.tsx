@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/utils/cn'
 import { useAuth } from '@/hooks/useAuth'
 import { ordersService } from '@/services/orders'
+import { StoreOpenStatus } from '@/components/ui/StoreOpenStatus'
 interface HeaderProps {
   onMenuClick: () => void
   sidebarCollapsed: boolean
@@ -89,6 +90,8 @@ export function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <StoreOpenStatus toggleable />
+
         {newOrders.length > 0 && (
           <Link
             to="/pedidos?status=NEW"
@@ -96,7 +99,7 @@ export function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
             aria-label={`${newOrders.length} novos pedidos`}
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-bg">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-white">
               {newOrders.length > 9 ? '9+' : newOrders.length}
             </span>
           </Link>

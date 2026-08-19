@@ -17,8 +17,30 @@ export const updateEstablishmentSchema = z.object({
   state: z.string().optional(),
   zipCode: z.string().optional(),
   cnpj: z.string().optional(),
-  logoUrl: z.string().url().optional().or(z.literal('')),
-  bannerUrl: z.string().url().optional().or(z.literal('')),
+  logoUrl: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(
+      (value) => {
+        if (!value) return true;
+        if (value.startsWith('data:image/')) return true;
+        return z.string().url().safeParse(value).success;
+      },
+      { message: 'URL do logo inválida.' },
+    ),
+  bannerUrl: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(
+      (value) => {
+        if (!value) return true;
+        if (value.startsWith('data:image/')) return true;
+        return z.string().url().safeParse(value).success;
+      },
+      { message: 'URL do banner inválida.' },
+    ),
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
   accentColor: z.string().optional(),

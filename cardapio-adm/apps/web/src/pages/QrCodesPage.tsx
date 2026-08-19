@@ -15,7 +15,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { ApiError } from '@/services/api'
+import { QrDisplayCard, buildQrPrintDocument, qrCardFooter } from '@/components/qr/QrDisplayCard'
 
 const KIND_OPTIONS: { value: QrCodeKind; label: string }[] = [
   { value: 'MENU', label: 'Cardápio' },
@@ -163,22 +163,20 @@ export function QrCodesPage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
+  const venueName = user?.establishment?.name || 'Casa'
+
   const printQr = (qr: QrCodeEntry) => {
     const url = buildTargetUrl(qr)
-    const imgUrl = buildQrImageUrl(url, 400)
-    const win = window.open('', '_blank', 'width=500,height=650')
+    const imgUrl = buildQrImageUrl(url, 480)
+    const win = window.open('', '_blank', 'width=520,height=720')
     if (!win) return
-    win.document.write(`
-      <html>
-        <head><title>${qr.name}</title></head>
-        <body style="font-family: sans-serif; text-align: center; padding: 24px;">
-          <h2>${qr.name}</h2>
-          <img src="${imgUrl}" alt="${qr.name}" style="width: 300px; height: 300px;" />
-          <p style="color:#555; word-break: break-all;">${url}</p>
-          <script>window.onload = () => window.print()</script>
-        </body>
-      </html>
-    `)
+    win.document.write(
+      buildQrPrintDocument({
+        title: venueName,
+        imageUrl: imgUrl,
+        footer: qrCardFooter(qr),
+      }),
+    )
     win.document.close()
   }
 
@@ -224,21 +222,40 @@ export function QrCodesPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {qrCodes.map((qr) => {
             const url = buildTargetUrl(qr)
-            const imgUrl = buildQrImageUrl(url)
+            const imgUrl = buildQrImageUrl(url, 240)
             return (
               <div
                 key={qr.id}
                 className="flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface"
               >
-                <div className="flex items-center justify-center border-b border-border bg-white p-4">
-                  <img src={imgUrl} alt={qr.name} width={160} height={160} className="h-40 w-40" />
-                </div>
+                {qr.isActive ? (
+                  <QrDisplayCard
+                    qr={qr}
+                    imageUrl={imgUrl}
+                    venueName={venueName}
+                  />
+                ) : (
+                  <div className="relative">
+                    <div className="pointer-events-none opacity-40 grayscale">
+                      <QrDisplayCard
+                        qr={qr}
+                        imageUrl={imgUrl}
+                        venueName={venueName}
+                      />
+                    </div>
+                    <div className="absolute inset-0 grid place-items-center bg-bg/50">
+                      <Badge variant="muted">Inativo</Badge>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-1 flex-col gap-2 p-4">
                   <div className="flex items-center gap-2">
                     <h3 className="truncate font-medium text-text">{qr.name}</h3>
-                    <Badge variant={qr.isActive ? 'success' : 'muted'}>
-                      {qr.isActive ? 'Ativo' : 'Inativo'}
-                    </Badge>
+                    {qr.isActive ? (
+                      <Badge variant="success">Ativo</Badge>
+                    ) : (
+                      <Badge variant="muted">Inativo</Badge>
+                    )}
                   </div>
                   <Badge variant="accent" className="w-fit">
                     {kindLabels[qr.kind]}

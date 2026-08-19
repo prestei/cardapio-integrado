@@ -1,19 +1,22 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-display: 'Syne', sans-serif;
-  --font-hero: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --font-body: 'Karla', sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-hero: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 
-  --color-ink: #0c0b0a;
-  --color-ink-soft: #161412;
-  --color-ink-elevated: #1c1a17;
-  --color-bone: #f0ebe3;
-  --color-bone-muted: #9a9288;
-  --color-brass: #d4a574;
-  --color-brass-dim: #a8845a;
-  --color-line: rgb(212 165 116 / 0.18);
-  --color-danger: #c45c4a;
+  --color-ink: #0d0f17;
+  --color-ink-soft: #1a1c26;
+  --color-ink-elevated: #252836;
+  --color-bone: #ffffff;
+  --color-bone-muted: #94a3b8;
+  --color-brass: #d4923a;
+  --color-brass-dim: #b07830;
+  --color-cta: #6366f1;
+  --color-cta-hover: #818cf8;
+  --color-line: rgb(148 163 184 / 0.16);
+  --color-danger: #f43f5e;
+  --color-success: #10b981;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-soft: cubic-bezier(0.4, 0, 0.2, 1);
@@ -45,6 +48,14 @@
     --cart-dock-h: 0px;
     --dock-h: 0px;
     --dock-offset: 0px;
+  }
+}
+
+/* Cardápio mobile: sem header fixo nem abas inferiores */
+@media (max-width: 1023px) {
+  :root:has([data-mobile-menu]) {
+    --header-h: 0px;
+    --nav-h: 0px;
   }
 }
 
@@ -104,12 +115,12 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brass);
+    outline: 2px solid var(--color-cta);
     outline-offset: 3px;
   }
 
   ::selection {
-    background: rgb(212 165 116 / 0.35);
+    background: rgb(99 102 241 / 0.35);
     color: var(--color-bone);
   }
 }
@@ -210,26 +221,26 @@
 
 .hero-title {
   font-family: var(--font-hero);
-  font-weight: 500;
+  font-weight: 700;
   font-style: normal;
-  letter-spacing: -0.02em;
-  line-height: 0.92;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
   color: var(--color-bone);
-  font-size: clamp(3rem, 11vw, 7.25rem);
+  font-size: clamp(2.75rem, 10vw, 6.5rem);
   text-wrap: balance;
   text-shadow:
-    0 1px 0 rgb(12 11 10 / 0.25),
-    0 18px 48px rgb(12 11 10 / 0.45);
+    0 1px 0 rgb(13 15 23 / 0.25),
+    0 18px 48px rgb(13 15 23 / 0.45);
 }
 
 .hero-tagline {
-  font-family: var(--font-hero);
+  font-family: var(--font-body);
   font-weight: 400;
-  font-style: italic;
-  letter-spacing: 0.01em;
-  line-height: 1.35;
-  color: rgb(240 235 227 / 0.78);
-  font-size: clamp(1.15rem, 2.6vw, 1.65rem);
+  font-style: normal;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+  color: rgb(148 163 184 / 0.92);
+  font-size: clamp(1.05rem, 2.4vw, 1.4rem);
   text-wrap: pretty;
-  text-shadow: 0 8px 28px rgb(12 11 10 / 0.35);
+  text-shadow: 0 8px 28px rgb(13 15 23 / 0.35);
 }

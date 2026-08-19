@@ -58,7 +58,7 @@ export function Promotions({ promotions, products, copy }: PromotionsProps) {
             label={title}
             getKey={(p) => p.id}
             autoplayMs={8000}
-            renderCard={(promo, { stacked }) => (
+            renderCard={(promo, { stacked, active }) => (
               <EditorialCard
                 imageUrl={promo.imageUrl}
                 imageAlt={promo.title}
@@ -71,6 +71,7 @@ export function Promotions({ promotions, products, copy }: PromotionsProps) {
                 meta={promo.validUntil ? `Até ${promo.validUntil}` : undefined}
                 ctaLabel={promo.ctaLabel}
                 stacked={stacked}
+                active={active}
                 onCta={() => handleCta(promo)}
               />
             )}

@@ -1,9 +1,22 @@
 import { z } from 'zod';
 
+const imageUrlSchema = z
+  .string()
+  .optional()
+  .or(z.literal(''))
+  .refine(
+    (value) => {
+      if (!value) return true;
+      if (value.startsWith('data:image/')) return true;
+      return z.string().url().safeParse(value).success;
+    },
+    { message: 'URL da imagem inválida.' },
+  );
+
 export const createCategorySchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
   description: z.string().optional(),
-  imageUrl: z.string().url('URL da imagem inválida.').optional().or(z.literal('')),
+  imageUrl: imageUrlSchema,
   sortOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
 });

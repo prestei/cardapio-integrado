@@ -21,6 +21,7 @@ export interface Store {
   fontDisplay?: string
   fontBody?: string
   isOpen: boolean
+  estimatedMinutes?: number | null
   images: StoreImage[]
 }
 

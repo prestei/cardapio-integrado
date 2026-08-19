@@ -37,7 +37,7 @@ export const categoryService = {
     await this.getById(id, establishmentId);
     const updated = await categoryRepository.update(id, establishmentId, {
       ...input,
-      imageUrl: input.imageUrl === '' ? undefined : input.imageUrl,
+      imageUrl: input.imageUrl === '' ? null : input.imageUrl,
     });
     return updated;
   },

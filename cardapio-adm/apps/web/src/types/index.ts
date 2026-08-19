@@ -443,10 +443,29 @@ export interface CustomerDetail {
   }
 }
 
+export interface PaginationMeta {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  pagination: PaginationMeta
+}
+
 export type CustomerListItem = Pick<
   CustomerDetail,
   'id' | 'establishmentId' | 'name' | 'phone' | 'email' | 'isActive' | 'createdAt'
-> & { _count?: { orders: number } }
+> & {
+  _count?: { orders: number; addresses?: number }
+  stats?: {
+    totalOrders: number
+    totalSpent: number
+    lastOrderAt: string | null
+  }
+}
 
 export interface UpdateCustomerInput {
   name?: string

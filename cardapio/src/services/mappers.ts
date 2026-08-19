@@ -53,6 +53,9 @@ export interface ApiMenuResponse {
     isOpen: boolean
   }
   openStatus?: { isOpenNow: boolean }
+  settings?: {
+    estimatedMinutes?: number | null
+  }
   sections?: Partial<MenuSections>
   categories: Array<{
     id: string
@@ -181,11 +184,14 @@ export function mapProduct(
   }
 }
 
-function mapStore(api: ApiMenuResponse['establishment'], isOpen: boolean): Store {
-  // No admin: primary = accento da marca, secondary = tom escuro.
-  // No cardápio: primary = fundo (ink), secondary = accento (brass).
-  const ink = api.secondaryColor || '#0C0B0A'
-  const brass = api.primaryColor || '#D4A574'
+function mapStore(
+  api: ApiMenuResponse['establishment'],
+  isOpen: boolean,
+  estimatedMinutes?: number | null,
+): Store {
+  // Paleta do guia: fundo fixo no CSS. Marca do restaurante pode tingir o dourado de ofertas.
+  const ink = '#0d0f17'
+  const brass = api.primaryColor || '#d4923a'
 
   const images: StoreImage[] = []
   if (api.bannerUrl) {
@@ -196,14 +202,7 @@ function mapStore(api: ApiMenuResponse['establishment'], isOpen: boolean): Store
       label: 'Ambiente',
     })
   }
-  if (api.logoUrl && images.length === 0) {
-    images.push({
-      id: 'logo-hero',
-      url: api.logoUrl,
-      alt: api.name,
-      label: 'Marca',
-    })
-  }
+  // Sem banner cadastrado: foto ambiente padrão (logo fica só no círculo da capa).
   if (images.length === 0) {
     images.push(...structuredClone(mockMenu.store.images))
   }
@@ -226,6 +225,7 @@ function mapStore(api: ApiMenuResponse['establishment'], isOpen: boolean): Store
     secondaryColor: brass,
     accentColor: '#F0EBE3',
     isOpen,
+    estimatedMinutes: estimatedMinutes ?? null,
     images,
   }
 }
@@ -277,6 +277,7 @@ export function mapMenuResponse(data: ApiMenuResponse): MenuData {
     store: mapStore(
       data.establishment,
       data.openStatus?.isOpenNow ?? data.establishment.isOpen,
+      data.settings?.estimatedMinutes,
     ),
     categories,
     featuredProducts,

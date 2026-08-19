@@ -15,9 +15,11 @@ const NAV_META: { id: SectionId; Icon: typeof Home; key: keyof MenuSections['nav
 interface SectionNavProps {
   active: string
   labels?: MenuSections['nav']
+  /** Esconde as abas inferiores no mobile (layout lista). */
+  hideMobileTabs?: boolean
 }
 
-export function SectionNav({ active, labels }: SectionNavProps) {
+export function SectionNav({ active, labels, hideMobileTabs }: SectionNavProps) {
   const { itemCount, subtotal, openCart, isOpen, lastAddedAt } = useCart()
   const hasCart = itemCount > 0
   const items = NAV_META.map((item) => ({
@@ -99,8 +101,15 @@ export function SectionNav({ active, labels }: SectionNavProps) {
       {/* Mobile unified dock */}
       <div
         data-dock-cart={hasCart && !isOpen ? 'true' : 'false'}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line/50 bg-ink/92 backdrop-blur-md lg:hidden"
-        style={{ paddingBottom: 'var(--safe-bottom)' }}
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-40 lg:hidden',
+          hideMobileTabs
+            ? hasCart && !isOpen
+              ? 'bg-cta'
+              : 'pointer-events-none'
+            : 'border-t border-line/50 bg-ink/92 backdrop-blur-md',
+        )}
+        style={{ paddingBottom: hideMobileTabs && !(hasCart && !isOpen) ? 0 : 'var(--safe-bottom)' }}
       >
         <AnimatePresence initial={false}>
           {hasCart && !isOpen && (
@@ -111,7 +120,7 @@ export function SectionNav({ active, labels }: SectionNavProps) {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
               onClick={openCart}
-              className="flex w-full items-center justify-between gap-3 overflow-hidden border-b border-line/40 bg-brass px-4 text-ink"
+              className="flex w-full items-center justify-between gap-3 overflow-hidden border-b border-line/40 bg-cta px-4 text-white"
               style={{ minHeight: '3.25rem' }}
               aria-label={`Ver pedido, ${itemCount} itens, ${formatCurrency(subtotal)}`}
             >
@@ -125,6 +134,7 @@ export function SectionNav({ active, labels }: SectionNavProps) {
           )}
         </AnimatePresence>
 
+        {!hideMobileTabs && (
         <nav aria-label="Navegação rápida" className="px-1 pt-1">
           <ul className="mx-auto flex max-w-lg items-stretch justify-between">
             {items.map((item) => {
@@ -168,6 +178,7 @@ export function SectionNav({ active, labels }: SectionNavProps) {
             })}
           </ul>
         </nav>
+        )}
       </div>
     </>
   )

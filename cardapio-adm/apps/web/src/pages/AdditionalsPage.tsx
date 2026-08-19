@@ -12,6 +12,12 @@ import {
   Settings2,
   Link2,
   X,
+  CircleDot,
+  ListChecks,
+  CheckCircle2,
+  Package,
+  Power,
+  Layers,
 } from 'lucide-react'
 import { additionalsService } from '@/services/additionals'
 import { productsService } from '@/services/products'
@@ -24,10 +30,11 @@ import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { TableSkeleton } from '@/components/ui/Skeleton'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { ApiError } from '@/services/api'
 import { formatCurrency } from '@/utils/format'
 import { useDebounce } from '@/hooks/useDebounce'
+import { cn } from '@/utils/cn'
 
 const groupSchema = z.object({
   name: z.string().min(1, 'Nome obrigatório'),
@@ -46,8 +53,49 @@ const SELECTION_OPTIONS = [
   { value: 'MULTIPLE', label: 'Múltipla escolha' },
 ]
 
+type StatusFilter = 'all' | 'active' | 'inactive' | 'empty'
+
+function optionCount(group: AdditionalGroup) {
+  return group.additionals?.length ?? group._count?.additionals ?? 0
+}
+
+function productCount(group: AdditionalGroup) {
+  return group._count?.products ?? group.products?.length ?? 0
+}
+
+function optionCountLabel(n: number) {
+  if (n === 0) return 'Nenhuma opção'
+  if (n === 1) return '1 opção'
+  return `${n} opções`
+}
+
+function productCountLabel(n: number) {
+  if (n === 0) return 'Nenhum produto'
+  if (n === 1) return '1 produto'
+  return `${n} produtos`
+}
+
+function AdditionalsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-[4.5rem] w-full rounded-[var(--radius-lg)]" />
+        ))}
+      </div>
+      <Skeleton className="h-12 w-full rounded-[var(--radius-lg)]" />
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 w-full rounded-[var(--radius-lg)]" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function AdditionalsPage() {
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const debouncedSearch = useDebounce(search)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<AdditionalGroup | null>(null)
@@ -61,9 +109,18 @@ export function AdditionalsPage() {
     queryFn: additionalsService.list,
   })
 
-  const filteredGroups = groups.filter((g) =>
-    g.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
-  )
+  const filteredGroups = groups.filter((g) => {
+    const matchesSearch = g.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+    if (!matchesSearch) return false
+    if (statusFilter === 'active') return g.isActive
+    if (statusFilter === 'inactive') return !g.isActive
+    if (statusFilter === 'empty') return optionCount(g) === 0
+    return true
+  })
+
+  const activeCount = groups.filter((g) => g.isActive).length
+  const totalOptions = groups.reduce((sum, g) => sum + optionCount(g), 0)
+  const totalLinked = groups.reduce((sum, g) => sum + productCount(g), 0)
 
   const {
     register,
@@ -168,11 +225,18 @@ export function AdditionalsPage() {
     }
   }
 
+  const filters: { id: StatusFilter; label: string }[] = [
+    { id: 'all', label: 'Todos' },
+    { id: 'active', label: 'Ativos' },
+    { id: 'inactive', label: 'Inativos' },
+    { id: 'empty', label: 'Sem opções' },
+  ]
+
   return (
     <div>
       <PageHeader
         title="Adicionais"
-        description="Gerencie grupos de adicionais e complementos"
+        description="Grupos de extras que o cliente escolhe na hora de pedir — bacon, ponto da carne, molhos."
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
@@ -181,19 +245,7 @@ export function AdditionalsPage() {
         }
       />
 
-      <div className="mb-4 relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-        <input
-          type="search"
-          placeholder="Buscar grupo..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full rounded-[var(--radius-md)] border border-border bg-surface pl-9 pr-3 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          aria-label="Buscar grupos de adicionais"
-        />
-      </div>
-
-      {isLoading && <TableSkeleton rows={5} />}
+      {isLoading && <AdditionalsSkeleton />}
 
       {error && (
         <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-8 text-center text-danger">
@@ -201,79 +253,255 @@ export function AdditionalsPage() {
         </div>
       )}
 
-      {!isLoading && !error && filteredGroups.length === 0 && (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-surface">
+      {!isLoading && !error && groups.length === 0 && (
+        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+          <div className="h-1.5 bg-gradient-to-r from-accent via-gold to-success" />
           <EmptyState
             icon={PlusCircle}
-            title="Nenhum grupo de adicionais"
-            description="Crie grupos de adicionais para complementar seus produtos."
+            title="Monte os extras do pedido"
+            description="Crie um grupo (ex.: Molhos, Ponto da carne) e cadastre as opções. Depois vincule aos produtos do cardápio."
             action={{ label: 'Novo grupo', onClick: openCreate }}
           />
         </div>
       )}
 
-      {!isLoading && filteredGroups.length > 0 && (
-        <div className="space-y-2">
-          {filteredGroups.map((group) => (
-            <div
-              key={group.id}
-              className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4 sm:flex-row sm:items-center"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-medium text-text">{group.name}</h3>
-                  <Badge variant={group.isActive ? 'success' : 'muted'}>
-                    {group.isActive ? 'Ativo' : 'Inativo'}
-                  </Badge>
-                  <Badge variant="accent">
-                    {group.selectionType === 'SINGLE' ? 'Escolha única' : 'Múltipla escolha'}
-                  </Badge>
-                  {group.isRequired && <Badge variant="warning">Obrigatório</Badge>}
-                </div>
-                {group.description && (
-                  <p className="mt-0.5 truncate text-sm text-muted">{group.description}</p>
-                )}
-                <p className="mt-1 text-xs text-muted">
-                  {group.additionals?.length ?? group._count?.additionals ?? 0} opção(ões) ·
-                  {' '}min {group.minQuantity} / max {group.maxQuantity} ·
-                  {' '}{group.products?.length ?? group._count?.products ?? 0} produto(s) vinculado(s)
-                </p>
+      {!isLoading && groups.length > 0 && (
+        <>
+          <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-accent-muted">
+                <Layers className="h-5 w-5 text-accent" />
               </div>
-
-              <div className="flex flex-wrap items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setManagingOptions(group)}>
-                  <Settings2 className="h-4 w-4" />
-                  Opções
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setLinkingProducts(group)}>
-                  <Link2 className="h-4 w-4" />
-                  Produtos
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    toggleMutation.mutate({ id: group.id, isActive: !group.isActive })
-                  }
-                >
-                  {group.isActive ? 'Desativar' : 'Ativar'}
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => openEdit(group)} aria-label="Editar">
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleteConfirm(group)}
-                  aria-label="Excluir"
-                  className="text-danger hover:text-danger"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{groups.length}</p>
+                <p className="text-sm text-muted">Grupos</p>
               </div>
             </div>
-          ))}
-        </div>
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-success/15">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{activeCount}</p>
+                <p className="text-sm text-muted">Ativos no cardápio</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-gold-muted">
+                <ListChecks className="h-5 w-5 text-gold" />
+              </div>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{totalOptions}</p>
+                <p className="text-sm text-muted">Opções cadastradas</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[#3b82f6]/15">
+                <Package className="h-5 w-5 text-[#60a5fa]" />
+              </div>
+              <div>
+                <p className="font-display text-xl font-semibold text-text">{totalLinked}</p>
+                <p className="text-sm text-muted">Produtos vinculados</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input
+                type="search"
+                placeholder="Buscar grupo..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 w-full rounded-[var(--radius-md)] border border-border bg-elevated pr-3 pl-9 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+                aria-label="Buscar grupos de adicionais"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {filters.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setStatusFilter(filter.id)}
+                  className={cn(
+                    'h-9 rounded-full px-3 text-sm font-medium transition-colors',
+                    statusFilter === filter.id
+                      ? 'bg-accent text-white'
+                      : 'bg-elevated text-muted hover:text-text',
+                  )}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filteredGroups.length === 0 ? (
+            <div className="rounded-[var(--radius-lg)] border border-border bg-surface">
+              <EmptyState
+                icon={Search}
+                title="Nenhum grupo neste filtro"
+                description="Tente outro termo ou limpe os filtros para ver todos os grupos."
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredGroups.map((group) => {
+                const options = group.additionals ?? []
+                const optionsN = optionCount(group)
+                const productsN = productCount(group)
+                const single = group.selectionType === 'SINGLE'
+                const Icon = single ? CircleDot : ListChecks
+
+                return (
+                  <div
+                    key={group.id}
+                    className={cn(
+                      'relative overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface',
+                      'transition-colors duration-150 hover:border-accent/35 hover:bg-elevated/40',
+                      !group.isActive && 'opacity-75',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'absolute inset-y-0 left-0 w-1',
+                        !group.isActive ? 'bg-muted' : single ? 'bg-accent' : 'bg-gold',
+                      )}
+                      aria-hidden="true"
+                    />
+
+                    <div className="flex flex-col gap-4 p-4 pl-5 sm:flex-row sm:items-center sm:gap-4">
+                      <div
+                        className={cn(
+                          'flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--radius-md)]',
+                          !group.isActive
+                            ? 'bg-elevated text-muted'
+                            : single
+                              ? 'bg-accent-muted text-accent'
+                              : 'bg-gold-muted text-gold',
+                        )}
+                      >
+                        <Icon className="h-7 w-7" strokeWidth={1.6} aria-hidden="true" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-display text-base font-semibold text-text sm:text-lg">
+                            {group.name}
+                          </h3>
+                          <Badge variant={group.isActive ? 'success' : 'muted'}>
+                            {group.isActive ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                          <Badge variant={single ? 'accent' : 'default'}>
+                            {single ? 'Escolha única' : 'Múltipla escolha'}
+                          </Badge>
+                          {group.isRequired && <Badge variant="warning">Obrigatório</Badge>}
+                        </div>
+
+                        {group.description ? (
+                          <p className="mt-1 line-clamp-1 text-sm text-muted">{group.description}</p>
+                        ) : (
+                          <p className="mt-1 text-sm text-muted/60 italic">Sem descrição</p>
+                        )}
+
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs',
+                              optionsN === 0 ? 'bg-gold-muted text-gold' : 'bg-elevated text-muted',
+                            )}
+                          >
+                            <ListChecks className="h-3.5 w-3.5" />
+                            {optionCountLabel(optionsN)}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-elevated px-2.5 py-1 text-xs text-muted">
+                            min {group.minQuantity} · max {group.maxQuantity}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-elevated px-2.5 py-1 text-xs text-muted">
+                            <Package className="h-3.5 w-3.5" />
+                            {productCountLabel(productsN)}
+                          </span>
+                        </div>
+
+                        {options.length > 0 && (
+                          <div className="mt-2.5 flex flex-wrap gap-1.5">
+                            {options.slice(0, 5).map((option) => (
+                              <span
+                                key={option.id}
+                                className="inline-flex max-w-[10rem] truncate rounded-[var(--radius-sm)] border border-border bg-bg/60 px-2 py-0.5 text-[11px] text-text"
+                              >
+                                {option.name}
+                                {option.price > 0 ? ` · ${formatCurrency(option.price)}` : ''}
+                              </span>
+                            ))}
+                            {options.length > 5 && (
+                              <span className="inline-flex rounded-[var(--radius-sm)] px-2 py-0.5 text-[11px] text-muted">
+                                +{options.length - 5}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex shrink-0 flex-wrap items-center gap-2 self-end sm:flex-col sm:items-stretch lg:flex-row lg:items-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setManagingOptions(group)}
+                        >
+                          <Settings2 className="h-4 w-4" />
+                          Opções
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLinkingProducts(group)}
+                        >
+                          <Link2 className="h-4 w-4" />
+                          Produtos
+                        </Button>
+                        <div className="flex items-center gap-0.5 rounded-[var(--radius-md)] bg-elevated/80 p-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              toggleMutation.mutate({ id: group.id, isActive: !group.isActive })
+                            }
+                            aria-label={group.isActive ? 'Desativar' : 'Ativar'}
+                            title={group.isActive ? 'Desativar' : 'Ativar'}
+                            className={cn(group.isActive ? 'text-success' : 'text-muted')}
+                          >
+                            <Power className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(group)}
+                            aria-label="Editar"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteConfirm(group)}
+                            aria-label="Excluir"
+                            title="Excluir"
+                            className="text-danger hover:text-danger"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
 
       <Modal

@@ -34,6 +34,7 @@ import { Select } from '@/components/ui/Select'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ApiError } from '@/services/api'
 import { cn } from '@/utils/cn'
+import { ImageDropzone } from '@/components/ui/ImageDropzone'
 import { useAuth } from '@/hooks/useAuth'
 
 type TabId =
@@ -281,6 +282,7 @@ function IdentityTab({ establishment }: { establishment: Establishment }) {
     register,
     handleSubmit,
     watch,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<IdentityForm>({
@@ -310,83 +312,144 @@ function IdentityTab({ establishment }: { establishment: Establishment }) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4 rounded-[var(--radius-lg)] border border-border bg-surface p-5"
-      >
-        <Input label="URL do logo" {...register('logoUrl')} />
-        <Input label="URL do banner" {...register('bannerUrl')} />
-        <div className="grid grid-cols-3 gap-3">
-          <ColorInput label="Cor primária" registration={register('primaryColor')} />
-          <ColorInput label="Cor secundária" registration={register('secondaryColor')} />
-          <ColorInput label="Cor de destaque" registration={register('accentColor')} />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <section className="rounded-[var(--radius-lg)] border border-border bg-surface p-5 sm:p-6">
+        <div className="grid items-stretch gap-5 sm:grid-cols-2">
+          <ImageDropzone
+            label="Logo"
+            hint="Aparece no círculo da capa do cardápio"
+            value={values.logoUrl}
+            maxEdge={800}
+            previewClassName="h-32 w-32 rounded-md object-cover"
+            className="h-full"
+            onChange={(url) => setValue('logoUrl', url, { shouldDirty: true })}
+            onClear={() => setValue('logoUrl', '', { shouldDirty: true })}
+          />
+          <ImageDropzone
+            label="Banner de capa"
+            hint="Arraste a capa do cardápio"
+            value={values.bannerUrl}
+            maxEdge={1600}
+            previewClassName="h-32 w-full rounded-md object-cover"
+            className="h-full"
+            onChange={(url) => setValue('bannerUrl', url, { shouldDirty: true })}
+            onClear={() => setValue('bannerUrl', '', { shouldDirty: true })}
+          />
         </div>
-        <SaveBar isSubmitting={isSubmitting} errorMessage={errors.root?.message} />
-      </form>
+        <input type="hidden" {...register('logoUrl')} />
+        <input type="hidden" {...register('bannerUrl')} />
+      </section>
 
-      <div className="rounded-[var(--radius-lg)] border border-border bg-bg">
-        <div className="border-b border-border bg-elevated px-4 py-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Prévia</p>
-        </div>
-        <div className="p-5">
-          {values.bannerUrl ? (
-            <img src={values.bannerUrl} alt="Banner" className="mb-3 h-24 w-full rounded-[var(--radius-md)] object-cover" />
-          ) : (
-            <div
-              className="mb-3 h-24 w-full rounded-[var(--radius-md)]"
-              style={{ background: `linear-gradient(135deg, ${values.primaryColor}, ${values.secondaryColor})` }}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="rounded-[var(--radius-lg)] border border-border bg-surface p-5 sm:p-6">
+          <p className="mb-4 text-[11px] font-medium tracking-[0.18em] text-muted uppercase">
+            Cores da marca
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <ColorInput
+              label="Cor primária"
+              value={values.primaryColor}
+              registration={register('primaryColor')}
             />
-          )}
-          <div className="flex items-center gap-3">
-            {values.logoUrl ? (
-              <img src={values.logoUrl} alt="Logo" className="h-12 w-12 rounded-full object-cover" />
+            <ColorInput
+              label="Cor secundária"
+              value={values.secondaryColor}
+              registration={register('secondaryColor')}
+            />
+            <ColorInput
+              label="Cor de destaque"
+              value={values.accentColor || values.primaryColor}
+              registration={register('accentColor')}
+            />
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+          <div className="border-b border-border px-5 py-3">
+            <p className="text-[11px] font-medium tracking-[0.18em] text-muted uppercase">
+              Prévia
+            </p>
+          </div>
+          <div className="p-5">
+            {values.bannerUrl ? (
+              <img
+                src={values.bannerUrl}
+                alt="Banner"
+                className="mb-4 h-28 w-full rounded-[var(--radius-md)] object-cover"
+              />
             ) : (
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-full font-display text-lg font-semibold text-white"
+                className="mb-4 h-28 w-full rounded-[var(--radius-md)]"
+                style={{
+                  background: `linear-gradient(90deg, ${values.primaryColor}, ${values.secondaryColor})`,
+                }}
+              />
+            )}
+            <div className="flex items-center gap-3">
+              {values.logoUrl ? (
+                <img
+                  src={values.logoUrl}
+                  alt="Logo"
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-full font-display text-lg font-semibold text-white"
+                  style={{ backgroundColor: values.primaryColor }}
+                >
+                  {establishment.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p className="font-display font-medium text-text">{establishment.name}</p>
+                <p className="text-xs text-muted">comeon</p>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span
+                className="rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium text-white"
                 style={{ backgroundColor: values.primaryColor }}
               >
-                {establishment.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div>
-              <p className="font-display font-medium text-text">{establishment.name}</p>
-              <p className="text-xs text-muted">Cardápio digital</p>
+                Botão primário
+              </span>
+              <span
+                className="rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium text-white"
+                style={{ backgroundColor: values.accentColor || values.primaryColor }}
+              >
+                Destaque
+              </span>
             </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <span
-              className="rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium text-white"
-              style={{ backgroundColor: values.primaryColor }}
-            >
-              Botão primário
-            </span>
-            <span
-              className="rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium text-white"
-              style={{ backgroundColor: values.accentColor || values.primaryColor }}
-            >
-              Destaque
-            </span>
-          </div>
-        </div>
+        </section>
       </div>
-    </div>
+
+      <SaveBar isSubmitting={isSubmitting} errorMessage={errors.root?.message} />
+    </form>
   )
 }
 
 function ColorInput({
   label,
+  value,
   registration,
 }: {
   label: string
+  value: string
   registration: ReturnType<ReturnType<typeof useForm<IdentityForm>>['register']>
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-text">{label}</label>
-      <div className="flex items-center gap-2">
-        <input type="color" className="h-10 w-10 shrink-0 cursor-pointer rounded-[var(--radius-sm)] border border-border bg-surface" {...registration} />
-      </div>
+    <div className="flex flex-col gap-2">
+      <label className="text-[11px] font-medium tracking-[0.14em] text-muted uppercase">
+        {label}
+      </label>
+      <label className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-border bg-bg px-3 py-2.5">
+        <input
+          type="color"
+          className="h-9 w-9 shrink-0 cursor-pointer rounded-md border border-border bg-transparent"
+          {...registration}
+        />
+        <span className="truncate font-mono text-xs uppercase text-muted">{value}</span>
+      </label>
     </div>
   )
 }
@@ -578,61 +641,49 @@ function ServiceTab({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-6 rounded-[var(--radius-lg)] border border-border bg-surface p-5"
-    >
-      <div>
-        <h3 className="mb-3 text-sm font-medium text-text">Modalidades de pedido</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input type="checkbox" {...register('acceptDelivery')} className="rounded border-border" />
-            Delivery
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input type="checkbox" {...register('acceptPickup')} className="rounded border-border" />
-            Retirada
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input type="checkbox" {...register('acceptDineIn')} className="rounded border-border" />
-            Salão
-          </label>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <section className="rounded-[var(--radius-lg)] border border-border bg-surface p-5 sm:p-6">
+        <h3 className="mb-4 text-[11px] font-medium tracking-[0.18em] text-muted uppercase">
+          Modalidades de pedido
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          <CheckTile label="Delivery" registration={register('acceptDelivery')} />
+          <CheckTile label="Retirada" registration={register('acceptPickup')} />
+          <CheckTile label="Salão" registration={register('acceptDineIn')} />
         </div>
-      </div>
+      </section>
 
-      <div>
-        <h3 className="mb-3 text-sm font-medium text-text">Formas de pagamento</h3>
-        <div className="grid gap-3 sm:grid-cols-4">
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input type="checkbox" {...register('acceptCash')} className="rounded border-border" />
-            Dinheiro
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input type="checkbox" {...register('acceptPix')} className="rounded border-border" />
-            Pix
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input type="checkbox" {...register('acceptCard')} className="rounded border-border" />
-            Cartão
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text">
-            <input type="checkbox" {...register('acceptOnline')} className="rounded border-border" />
-            Pagamento online
-          </label>
+      <section className="rounded-[var(--radius-lg)] border border-border bg-surface p-5 sm:p-6">
+        <h3 className="mb-4 text-[11px] font-medium tracking-[0.18em] text-muted uppercase">
+          Formas de pagamento
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          <CheckTile label="Dinheiro" registration={register('acceptCash')} />
+          <CheckTile label="Pix" registration={register('acceptPix')} />
+          <CheckTile label="Cartão" registration={register('acceptCard')} />
+          <CheckTile label="Pagamento online" registration={register('acceptOnline')} />
         </div>
-      </div>
+      </section>
 
-      <div>
-        <h3 className="mb-3 text-sm font-medium text-text">Agendamento e preparo</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Tempo estimado de preparo (min)" type="number" {...register('estimatedMinutes')} />
-          <label className="flex items-center gap-2 self-end text-sm text-text pb-2.5">
-            <input type="checkbox" {...register('allowScheduledOrders')} className="rounded border-border" />
-            Permitir pedidos agendados
-          </label>
+      <section className="rounded-[var(--radius-lg)] border border-border bg-surface p-5 sm:p-6">
+        <h3 className="mb-4 text-[11px] font-medium tracking-[0.18em] text-muted uppercase">
+          Agendamento e preparo
+        </h3>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          <div className="w-full max-w-[200px]">
+            <Input
+              label="Tempo estimado de preparo (min)"
+              type="number"
+              {...register('estimatedMinutes')}
+            />
+          </div>
+          <CheckTile
+            label="Permitir pedidos agendados"
+            registration={register('allowScheduledOrders')}
+          />
         </div>
         {allowScheduled && (
-          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid max-w-3xl gap-4 sm:grid-cols-2">
             <Input
               label="Antecedência mínima (min)"
               type="number"
@@ -661,10 +712,25 @@ function ServiceTab({
             />
           </div>
         )}
-      </div>
+      </section>
 
       <SaveBar isSubmitting={isSubmitting} errorMessage={errors.root?.message} />
     </form>
+  )
+}
+
+function CheckTile({
+  label,
+  registration,
+}: {
+  label: string
+  registration: ReturnType<ReturnType<typeof useForm<ServiceForm>>['register']>
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-bg px-3.5 py-2.5 text-sm text-text transition-colors hover:border-muted">
+      <input type="checkbox" className="rounded border-border accent-accent" {...registration} />
+      {label}
+    </label>
   )
 }
 
